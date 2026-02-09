@@ -1,0 +1,17 @@
+{
+  "name": "find-job",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "apps/server"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --prefix apps/server",
+    "dev:mobile": "npm run start --prefix apps/mobile -- --clear",
+    "dev": "concurrently -n \"SERVER,MOBILE\" -c \"blue,magenta\" \"npm run dev:server\" \"npm run dev:mobile\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
