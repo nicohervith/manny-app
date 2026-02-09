@@ -1,0 +1,85 @@
+// apps/server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Usuarios del sistema
+model User {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+
+  // Relación 1:1 con el perfil de trabajador
+  perfil    WorkerProfile?
+
+  // Relaciones con los trabajos (Jobs)
+  trabajosComoCliente    Job[] @relation("ClienteJobs")
+  trabajosComoTrabajador Job[] @relation("TrabajadorJobs")
+}
+
+// 2. Perfil detallado para quienes son TRABAJADOR
+model WorkerProfile {
+  id          Int      @id @default(autoincrement())
+  oficio      String   // Ej: Electricista, Plomero
+  descripcion String   @db.Text
+  dni         String   @unique
+  fotoDni     String?  // URL de Cloudinary
+  tarifaHora  Float?
+  
+  // Relación con User
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// 3. Tabla de trabajos o servicios contratados
+model Job {
+  id            Int      @id @default(autoincrement())
+  titulo        String
+  descripcion   String   @db.Text
+  estado        JobStatus @default(PENDIENTE)
+  presupuesto   Float?
+  createdAt     DateTime @default(now())
+
+  // Relación con el Cliente (quien contrata)
+  clienteId     Int
+  cliente       User     @relation("ClienteJobs", fields: [clienteId], references: [id])
+
+  // Relación con el Trabajador (quien es contratado)
+  trabajadorId  Int
+  trabajador    User     @relation("TrabajadorJobs", fields: [trabajadorId], references: [id])
+
+  ajustes       JobAdjustment[]
+}
+
+// 4. Ajustes o histórico de cambios en un trabajo
+model JobAdjustment {
+  id          Int      @id @default(autoincrement())
+  motivo      String
+  montoPrevio Float
+  montoNuevo  Float
+  jobId       Int
+  job         Job      @relation(fields: [jobId], references: [id])
+}
+
+// ENUMS para mantener consistencia de datos
+enum Role {
+  CLIENT
+  WORKER
+  ADMIN
+}
+
+enum JobStatus {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADO
+  CANCELADO
+}

@@ -1,32 +1,34 @@
-import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-export default function WelcomeScreen() {
-  const router = useRouter();
+export default function HomeScreen() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const data = await SecureStore.getItemAsync("userData");
+      if (data) setUser(JSON.parse(data));
+    };
+    loadUser();
+  }, []);
+
+  if (!user) return <ActivityIndicator style={{ flex: 1 }} />;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>FindJob</Text>
-        <Text style={styles.subtitle}>
-          Tu próximo trabajo (o trabajador) está a un click.
-        </Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => router.push("/(auth)/login")}
-        >
-          <Text style={styles.loginText}>Iniciar Sesión</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={() => router.push("/(auth)/register")}
-        >
-          <Text style={styles.registerText}>Crear cuenta nueva</Text>
-        </TouchableOpacity>
+      <Text style={styles.title}>Hello, {user.nombre}!</Text>
+      <View style={styles.card}>
+        <Text style={styles.roleTag}>{user.role}</Text>
+        {user.role === "WORKER" ? (
+          <Text style={styles.info}>
+            You are ready to receive job requests.
+          </Text>
+        ) : (
+          <Text style={styles.info}>
+            Find the best professionals for your needs.
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -35,39 +37,22 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
+    backgroundColor: "#F5F7FA",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    marginBottom: 10,
+  },
+  card: {
     backgroundColor: "#fff",
     padding: 20,
-    justifyContent: "space-around",
+    borderRadius: 15,
+    elevation: 4,
   },
-  header: { alignItems: "center", marginTop: 50 },
-  title: { fontSize: 42, fontWeight: "bold", color: "#007AFF" },
-  subtitle: {
-    fontSize: 18,
-    color: "#666",
-    textAlign: "center",
-    marginTop: 10,
-    paddingHorizontal: 20,
-  },
-  buttonContainer: { width: "100%", gap: 15 },
-  loginButton: {
-    backgroundColor: "#007AFF",
-    padding: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  loginText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  registerButton: {
-    backgroundColor: "#fff",
-    padding: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#007AFF",
-  },
-  registerText: { color: "#007AFF", fontSize: 18, fontWeight: "bold" },
+  roleTag: { color: "#007AFF", fontWeight: "bold", marginBottom: 5 },
+  info: { fontSize: 16, color: "#444" },
 });

@@ -10,16 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-// RECUERDA: Cambia esto por TU IP LOCAL (ej: 192.168.1.50)
-const API_URL = "http://192.168.100.2:3000";
+import { API_URL } from "../../src/constants/Config";
 
 export default function RegisterScreen() {
   const [form, setForm] = useState({
     nombre: "",
     email: "",
     password: "",
-    role: "CLIENTE", // Valor por defecto
+    role: "CLIENT", // Valor por defecto
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -31,13 +29,22 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
+    console.log("Intentando conectar a:", `${API_URL}/api/auth/register`);
+    console.log("Datos:", form);
+
     try {
-      await axios.post(`${API_URL}/api/auth/register`, form);
+      const response = await axios.post(`${API_URL}/api/auth/register`, form);
+      console.log("Respuesta del server:", response.data);
       Alert.alert("¡Éxito!", "Cuenta creada. Ahora puedes iniciar sesión.");
       router.replace("/login");
     } catch (error: any) {
-      const msg = error.response?.data?.error || "Error al registrar";
-      Alert.alert("Error", msg);
+      console.error("ERROR COMPLETO:", error);
+      if (error.response) {
+        console.log("Data del error:", error.response.data);
+      } else if (error.request) {
+        console.log("El server no respondió. Revisa la IP/Red.");
+      }
+      Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -70,7 +77,7 @@ export default function RegisterScreen() {
 
       <Text style={styles.label}>¿Qué buscas hacer?</Text>
       <View style={styles.roleContainer}>
-        {["CLIENTE", "TRABAJADOR"].map((r) => (
+        {["CLIENT", "WORKER"].map((r) => (
           <TouchableOpacity
             key={r}
             style={[

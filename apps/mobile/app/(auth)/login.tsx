@@ -1,19 +1,16 @@
-import React, { useState } from "react";
+import axios from "axios";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import React, { useState } from "react";
 import {
-  View,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Platform,
+  View,
 } from "react-native";
-import axios from "axios";
-import { useRouter } from "expo-router";
+import { API_URL } from "../../src/constants/Config";
 import { useAuthStore } from "../../src/store/authStore";
-
-const API_URL = "http://192.168.100.2:3000";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -24,22 +21,30 @@ export default function LoginScreen() {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
       });
 
+      // Dentro de handleLogin en login.tsx
       const { token, user } = response.data;
 
-      // GUARDAR TOKEN DE FORMA SEGURA
       await SecureStore.setItemAsync("userToken", token);
       await SecureStore.setItemAsync("userData", JSON.stringify(user));
 
-      // Ir a la Home
-      router.replace("/(tabs)");
+      if (user.role === "WORKER" && !user.perfil) {
+        // Si es trabajador y no tiene perfil, lo mandamos a completar
+        router.replace("/worker/complete-profile");
+      } else {
+        // Clientes o Trabajadores con perfil completo van a la Home
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
       alert(error.response?.data?.error || "Error al iniciar sesión");
+    } finally {
+      setLoading(false);
     }
   };
 
