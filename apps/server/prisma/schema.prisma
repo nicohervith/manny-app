@@ -42,20 +42,19 @@ model WorkerProfile {
 
 // 3. Tabla de trabajos o servicios contratados
 model Job {
-  id            Int      @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   titulo        String
-  descripcion   String   @db.Text
-  estado        JobStatus @default(PENDIENTE)
+  descripcion   String          @db.Text
+  estado        JobStatus       @default(PENDIENTE)
   presupuesto   Float?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime        @default(now())
 
-  // Relación con el Cliente (quien contrata)
   clienteId     Int
-  cliente       User     @relation("ClienteJobs", fields: [clienteId], references: [id])
+  cliente       User            @relation("ClienteJobs", fields: [clienteId], references: [id])
 
-  // Relación con el Trabajador (quien es contratado)
-  trabajadorId  Int
-  trabajador    User     @relation("TrabajadorJobs", fields: [trabajadorId], references: [id])
+  // Cambia Int a Int? y agrega el signo ? a la relación
+  trabajadorId  Int?            // <--- Fíjate en el signo ?
+  trabajador    User?           @relation("TrabajadorJobs", fields: [trabajadorId], references: [id])
 
   ajustes       JobAdjustment[]
 }
