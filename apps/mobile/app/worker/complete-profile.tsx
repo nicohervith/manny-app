@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Image,
-  ActivityIndicator,
+  View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps"; // Importamos el mapa
-import * as Location from "expo-location";
-import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import axios from "axios";
-import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../src/constants/Config";
 
 export default function CompleteProfileScreen() {
@@ -33,6 +32,7 @@ export default function CompleteProfileScreen() {
 
   const [address, setAddress] = useState("Ubicación no establecida");
   const [image, setImage] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Región para controlar la vista del mapa
   const [region, setRegion] = useState({
@@ -105,7 +105,10 @@ export default function CompleteProfileScreen() {
       await axios.post(`${API_URL}/api/worker/complete-profile`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      Alert.alert("Éxito", "Perfil profesional creado correctamente.");
+      Alert.alert(
+        "Éxito",
+        isEditing ? "Perfil actualizado." : "Perfil creado.",
+      );
       router.replace("/(tabs)/worker-feed");
     } catch (error) {
       console.error(error);
@@ -113,14 +116,64 @@ export default function CompleteProfileScreen() {
     }
   };
 
+  // Dentro de CompleteProfileScreen
+
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      try {
+        const userDataRaw = await SecureStore.getItemAsync("userData");
+        const user = userDataRaw ? JSON.parse(userDataRaw) : null;
+
+        console.log("ID del usuario logueado:", user.id); // Debería imprimir 3
+
+        const res = await axios.get(
+          `${API_URL}/api/worker/profile/${user.id}`,
+        );
+        console.log("Datos recibidos del servidor:", res.data);
+
+        if (res.data) {
+          const p = res.data;
+          setIsEditing(true);
+          setForm({
+            occupation: p.occupation || "",
+            dni: p.dni || "",
+            description: p.description || "",
+            hourlyRate: p.hourlyRate ? p.hourlyRate.toString() : "", // Ojo con el null
+            latitude: p.latitude,
+            longitude: p.longitude,
+          });
+
+          if (p.latitude) {
+            setRegion((prev) => ({
+              ...prev,
+              latitude: p.latitude,
+              longitude: p.longitude,
+            }));
+            setAddress("Ubicación guardada anteriormente");
+          }
+        }
+      } catch (e) {
+        console.log("Perfil nuevo o no encontrado");
+        setIsEditing(false);
+      }
+    };
+    loadExistingProfile();
+  }, []);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Perfil Profesional</Text>
+      {/* 3. Título dinámico */}
+      <Text style={styles.title}>
+        {isEditing
+          ? "Editar Perfil Profesional"
+          : "Completar Perfil Profesional"}
+      </Text>
 
       <Text style={styles.label}>Ocupación</Text>
       <TextInput
         style={styles.input}
         placeholder="Ej: Plomero, Electricista..."
+        value={form.occupation} // 4. CAMBIO: Agregamos value
         onChangeText={(t) => setForm({ ...form, occupation: t })}
       />
 
@@ -129,13 +182,16 @@ export default function CompleteProfileScreen() {
         style={styles.input}
         keyboardType="numeric"
         placeholder="Ej: 15"
+        value={form.hourlyRate} // 4. CAMBIO: Agregamos value
         onChangeText={(t) => setForm({ ...form, hourlyRate: t })}
       />
 
       <Text style={styles.label}>DNI / Identificación</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, isEditing && { backgroundColor: "#f0f0f0" }]} // Gris si edita
         keyboardType="numeric"
+        editable={!isEditing} // 5. OPCIONAL: No permitir editar DNI una vez creado
+        value={form.dni} // 4. CAMBIO: Agregamos value
         onChangeText={(t) => setForm({ ...form, dni: t })}
       />
 
@@ -143,6 +199,7 @@ export default function CompleteProfileScreen() {
       <TextInput
         style={[styles.input, { height: 80, textAlignVertical: "top" }]}
         multiline
+        value={form.description} // 4. CAMBIO: Agregamos value
         onChangeText={(t) => setForm({ ...form, description: t })}
       />
 
@@ -197,7 +254,9 @@ export default function CompleteProfileScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={saveProfile}>
-        <Text style={styles.buttonText}>Guardar Perfil</Text>
+        <Text style={styles.buttonText}>
+          {isEditing ? "Guardar Cambios" : "Crear Perfil"}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );

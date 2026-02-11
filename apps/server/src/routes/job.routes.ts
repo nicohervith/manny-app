@@ -150,4 +150,44 @@ router.get("/feed/:workerId", async (req, res) => {
   }
 });
 
+// apps/server/src/routes/jobs.routes.ts
+
+router.post("/accept-bid", async (req, res) => {
+  try {
+    const { jobId, workerId, bidId } = req.body;
+
+    // Usamos una transacción para asegurar que ambos cambios ocurran o ninguno
+    // Importa el Enum si es necesario o úsalo como string si Prisma lo permite
+    await prisma.$transaction([
+      // 1. Actualizar el Trabajo
+      prisma.job.update({
+        // Asegúrate si es .task o .job según tu schema
+        where: { id: parseInt(jobId) },
+        data: {
+          status: "IN_PROGRESS",
+          workerId: parseInt(workerId),
+        },
+      }),
+      // 2. Aceptar la oferta elegida
+      prisma.bid.update({
+        where: { id: parseInt(bidId) },
+        data: { status: "ACCEPTED" }, // Ahora TypeScript reconocerá 'status'
+      }),
+      // 3. Rechazar las demás
+      prisma.bid.updateMany({
+        where: {
+          jobId: parseInt(jobId),
+          NOT: { id: parseInt(bidId) },
+        },
+        data: { status: "REJECTED" },
+      }),
+    ]);
+
+    res.json({ message: "Trabajador asignado con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al aceptar la oferta" });
+  }
+});
+
 export default router;

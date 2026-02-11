@@ -68,6 +68,8 @@ model Bid {
   estimatedMin Int     
   createdAt   DateTime @default(now())
 
+  status       BidStatus @default(PENDING)
+
   jobId       Int
   job         Job      @relation(fields: [jobId], references: [id])
 
@@ -95,6 +97,12 @@ enum JobStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 model Message {

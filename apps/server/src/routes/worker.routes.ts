@@ -28,9 +28,6 @@ router.post(
       }
 
       const fotoDniUrl = req.file ? req.file.path : null;
-
-      // 2. Usamos upsert: Si no existe lo crea, si existe lo actualiza
-      // Esto evita el error de "Perfil ya existente" si el usuario intenta editarlo
       const profile = await prisma.workerProfile.upsert({
         where: { userId: parseInt(userId) },
         update: {
@@ -87,6 +84,30 @@ router.get("/list", async (req, res) => {
     res.json(workers);
   } catch (error) {
     res.status(500).json({ error: "Error fetching workers" });
+  }
+});
+
+router.get("/profile/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const profile = await prisma.workerProfile.findUnique({
+      where: { userId: parseInt(userId) },
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+      },
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: "Perfil no encontrado" });
+    }
+
+    res.json(profile);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error de servidor" });
   }
 });
 

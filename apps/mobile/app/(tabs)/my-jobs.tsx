@@ -16,34 +16,21 @@ import {
 import { API_URL } from "../../src/constants/Config";
 
 export default function MyJobsScreen() {
-  const router = useRouter(); // 2. Inicializar router
+  const router = useRouter();
   const [myJobs, setMyJobs] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedJobBids, setSelectedJobBids] = useState([]);
-  const [bidsModalVisible, setBidsModalVisible] = useState(false);
 
   const fetchMyJobs = async () => {
     setRefreshing(true);
-    const userData = await SecureStore.getItemAsync("userData");
-    const user = JSON.parse(userData || "{}");
     try {
+      const userData = await SecureStore.getItemAsync("userData");
+      const user = JSON.parse(userData || "{}");
       const res = await axios.get(`${API_URL}/api/jobs/client/${user.id}`);
       setMyJobs(res.data);
     } catch (e) {
       console.error(e);
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const handleAcceptBid = async (jobId: number, workerId: number) => {
-    try {
-      await axios.patch(`${API_URL}/api/jobs/accept-bid`, { jobId, workerId });
-      Alert.alert("Success!", "Worker assigned.");
-      setBidsModalVisible(false);
-      fetchMyJobs();
-    } catch (error) {
-      Alert.alert("Error", "Could not assign worker.");
     }
   };
 
@@ -78,22 +65,26 @@ export default function MyJobsScreen() {
               </View>
             </View>
 
-            {/* SI ESTÁ PENDIENTE: Mostrar botón para ver postulantes */}
-            {item.status === "PENDING" && item._count?.bids > 0 && (
+            {/* SI ESTÁ PENDIENTE: Navegar a la nueva pantalla de postulantes */}
+            {item.status === "PENDING" && (
               <TouchableOpacity
                 style={styles.viewBidsButton}
                 onPress={() => {
-                  setSelectedJobBids(item.bids);
-                  setBidsModalVisible(true);
+                  router.push({
+                    pathname: "/client/job-bids/[id]", // La ruta estática del archivo
+                    params: { id: item.id.toString() }, // El valor dinámico
+                  });
                 }}
               >
                 <Text style={styles.viewBidsText}>
-                  Ver {item._count.bids} Postulantes
+                  {item._count?.bids > 0
+                    ? `Ver ${item._count.bids} Postulantes`
+                    : "Sin postulantes aún"}
                 </Text>
               </TouchableOpacity>
             )}
 
-            {/* SI YA ESTÁ EN PROGRESO: Mostrar botón de CHAT */}
+            {/* SI YA ESTÁ EN PROGRESO: Botón de CHAT */}
             {item.status === "IN_PROGRESS" && (
               <TouchableOpacity
                 style={styles.chatButton}
@@ -113,40 +104,6 @@ export default function MyJobsScreen() {
           </View>
         )}
       />
-
-      {/* MODAL DE BIDS (Se queda igual que antes) */}
-      <Modal
-        visible={bidsModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ofertas Recibidas</Text>
-              <TouchableOpacity onPress={() => setBidsModalVisible(false)}>
-                <Ionicons name="close-circle" size={30} color="#FF3B30" />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={selectedJobBids}
-              keyExtractor={(bid) => bid.id.toString()}
-              renderItem={({ item: bid }) => (
-                <View style={styles.bidCard}>
-                  <Text style={styles.workerName}>{bid.worker.name}</Text>
-                  <Text style={styles.bidPrice}>${bid.price}</Text>
-                  <TouchableOpacity
-                    style={styles.acceptButton}
-                    onPress={() => handleAcceptBid(bid.jobId, bid.workerId)}
-                  >
-                    <Text style={styles.acceptButtonText}>Aceptar</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

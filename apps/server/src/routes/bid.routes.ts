@@ -60,4 +60,23 @@ router.get("/worker/:workerId", async (req, res) => {
   }
 });
 
+router.get("/job/:jobId", async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const bids = await prisma.bid.findMany({
+      where: { jobId: parseInt(jobId) },
+      include: {
+        worker: {
+          // Traemos nombre del trabajador
+          select: { name: true, id: true },
+        },
+      },
+      orderBy: { price: "asc" }, // Mostrar los más baratos primero
+    });
+    res.json(bids);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener ofertas" });
+  }
+});
+
 export default router;
