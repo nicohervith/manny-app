@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 import axios from "axios";
 import * as Location from "expo-location";
 import * as SecureStore from "expo-secure-store";
@@ -8,13 +8,13 @@ import {
   Alert,
   FlatList,
   Modal,
-  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { JobCard } from "../../src/components/jobCard";
 import { API_URL } from "../../src/constants/Config";
 
 export default function WorkerFeedScreen() {
@@ -23,7 +23,7 @@ export default function WorkerFeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] =
     useState<Location.LocationObjectCoords | null>(null);
-
+  const [radius, setRadius] = useState(50);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [bidData, setBidData] = useState({
@@ -98,6 +98,20 @@ export default function WorkerFeedScreen() {
     }
   };
 
+  // --- Lógica de filtrado ---
+  const filteredJobs = jobs.filter((item) => {
+    if (!location || !item.latitude || !item.longitude) return true;
+
+    const distance = calculateDistance(
+      location.latitude,
+      location.longitude,
+      item.latitude,
+      item.longitude,
+    );
+
+    return distance <= radius; // Solo trabajos dentro del radio
+  });
+
   useEffect(() => {
     getPermissionsAndLocation();
     fetchJobs();
@@ -115,67 +129,52 @@ export default function WorkerFeedScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Available Jobs</Text>
-        <Text style={styles.subtitle}>Opportunities near your location</Text>
+
+        {/* Contenedor del Filtro */}
+        <View style={styles.filterContainer}>
+          <View style={styles.filterTextRow}>
+            <Text style={styles.filterLabel}>Radio de búsqueda:</Text>
+            <Text style={styles.radiusValue}>
+              {radius === 100 ? "Toda la ciudad" : `${radius} km`}
+            </Text>
+          </View>
+          <Slider
+            style={{ width: "100%", height: 40 }}
+            minimumValue={1}
+            maximumValue={100}
+            step={1}
+            value={radius}
+            onValueChange={(value) => setRadius(value)}
+            minimumTrackTintColor="#007AFF"
+            maximumTrackTintColor="#D1D1D6"
+            thumbTintColor="#007AFF"
+          />
+        </View>
       </View>
 
       <FlatList
-        data={jobs}
+        data={filteredJobs} // Usamos la lista filtrada
         keyExtractor={(item) => item.id.toString()}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
         renderItem={({ item }) => {
-          let distance = null;
-          if (location && item.latitude && item.longitude) {
-            distance = calculateDistance(
-              location.latitude,
-              location.longitude,
-              item.latitude,
-              item.longitude,
-            );
-          }
+          const distance =
+            location && item.latitude && item.longitude
+              ? calculateDistance(
+                  location.latitude,
+                  location.longitude,
+                  item.latitude,
+                  item.longitude,
+                )
+              : null;
 
           return (
-            <View style={styles.jobCard}>
-              <View style={styles.jobHeader}>
-                <Text style={styles.jobTitle}>{item.title}</Text>
-                {distance !== null && (
-                  <View style={styles.distanceBadge}>
-                    <Ionicons name="location" size={12} color="#007AFF" />
-                    <Text style={styles.distanceText}>
-                      {distance.toFixed(1)} km
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.description} numberOfLines={3}>
-                {item.descripcion}
-              </Text>
-
-              <View style={styles.footer}>
-                <View>
-                  <Text style={styles.clientLabel}>Posted by:</Text>
-                  <Text style={styles.clientName}>{item.client?.name}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.applyButton}
-                  onPress={() =>
-                    Alert.alert("Apply", "Feature coming soon: Bidding system")
-                  }
-                >
-                  <Text
-                    style={styles.applyButtonText}
-                    onPress={() => {
-                      setSelectedJob(item);
-                      setModalVisible(true);
-                    }}
-                  >
-                    Apply Now
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <JobCard
+              item={item}
+              distance={distance}
+              onApply={(job) => {
+                setSelectedJob(job);
+                setModalVisible(true);
+              }}
+            />
           );
         }}
         ListEmptyComponent={
@@ -308,4 +307,34 @@ const styles = StyleSheet.create({
   },
   cancelButton: { padding: 15, marginRight: 10 },
   confirmButton: { backgroundColor: "#007AFF", padding: 15, borderRadius: 10 },
+  filterContainer: {
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
+  },
+  filterTextRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  radiusValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#007AFF",
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    marginTop: 50,
+    paddingHorizontal: 40,
+  },
 });

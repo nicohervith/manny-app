@@ -1,123 +1,203 @@
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import MapView, { Marker } from "react-native-maps"; // Importamos el mapa
+import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity
-} from "react-native";
+import axios from "axios";
+import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../src/constants/Config";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [form, setForm] = useState({
-    occupation: "", 
+    occupation: "",
     dni: "",
-    description: "", 
+    description: "",
+    hourlyRate: "", // Nuevo campo
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+
+  const [address, setAddress] = useState("Ubicación no establecida");
   const [image, setImage] = useState<string | null>(null);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.5,
-    });
+  // Región para controlar la vista del mapa
+  const [region, setRegion] = useState({
+    latitude: -34.6037, // Buenos Aires por defecto
+    longitude: -58.3816,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+  const getLocation = async () => {
+    setLoadingLocation(true);
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permiso denegado",
+        "Necesitamos la ubicación para el feed de trabajos.",
+      );
+      setLoadingLocation(false);
+      return;
     }
+
+    let location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
+
+    setForm({ ...form, latitude, longitude });
+    setRegion({ ...region, latitude, longitude }); // Mover el mapa a la posición
+
+    let reverseGeocode = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+    if (reverseGeocode.length > 0) {
+      const item = reverseGeocode[0];
+      setAddress(
+        `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
+      );
+    }
+    setLoadingLocation(false);
   };
 
   const saveProfile = async () => {
     const userDataRaw = await SecureStore.getItemAsync("userData");
     const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
 
-    if (!userData) {
-      Alert.alert("Error", "No session found");
+    if (!form.latitude || !form.hourlyRate) {
+      Alert.alert(
+        "Error",
+        "Por favor completa la ubicación y el precio por hora.",
+      );
       return;
     }
 
-    // Usamos FormData para el envío de archivos (Multer en backend)
     const formData = new FormData();
     formData.append("userId", userData.id.toString());
     formData.append("occupation", form.occupation);
     formData.append("dni", form.dni);
     formData.append("description", form.description);
+    formData.append("hourlyRate", form.hourlyRate); // Envío de hourlyRate
+    formData.append("latitude", form.latitude.toString());
+    formData.append("longitude", form.longitude.toString());
 
     if (image) {
       const filename = image.split("/").pop();
       const match = /\.(\w+)$/.exec(filename || "");
       const type = match ? `image/${match[1]}` : `image`;
-
-      formData.append("dniPhoto", {
-        // Antes: fotoDni
-        uri: image,
-        name: filename,
-        type,
-      } as any);
+      formData.append("dniPhoto", { uri: image, name: filename, type } as any);
     }
 
     try {
       await axios.post(`${API_URL}/api/worker/complete-profile`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      Alert.alert("Success", "Your professional profile has been created.");
-      router.replace("/(tabs)/worker-feed"); // Redirigir al feed de trabajos
+      Alert.alert("Éxito", "Perfil profesional creado correctamente.");
+      router.replace("/(tabs)/worker-feed");
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Could not upload profile.");
+      Alert.alert("Error", "No se pudo subir el perfil.");
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Professional Profile</Text>
+      <Text style={styles.title}>Perfil Profesional</Text>
 
-      <Text style={styles.label}>Occupation</Text>
+      <Text style={styles.label}>Ocupación</Text>
       <TextInput
         style={styles.input}
-        placeholder="Ej: Plumber, Electrician..."
-        placeholderTextColor="#999"
+        placeholder="Ej: Plomero, Electricista..."
         onChangeText={(t) => setForm({ ...form, occupation: t })}
       />
 
-      <Text style={styles.label}>DNI Number</Text>
+      <Text style={styles.label}>Precio por Hora (USD)</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        placeholder="Identity number"
-        placeholderTextColor="#999"
+        placeholder="Ej: 15"
+        onChangeText={(t) => setForm({ ...form, hourlyRate: t })}
+      />
+
+      <Text style={styles.label}>DNI / Identificación</Text>
+      <TextInput
+        style={styles.input}
+        keyboardType="numeric"
         onChangeText={(t) => setForm({ ...form, dni: t })}
       />
 
-      <Text style={styles.label}>Experience / Bio</Text>
+      <Text style={styles.label}>Biografía / Experiencia</Text>
       <TextInput
-        style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+        style={[styles.input, { height: 80, textAlignVertical: "top" }]}
         multiline
-        placeholder="Tell clients about your work experience..."
-        placeholderTextColor="#999"
         onChangeText={(t) => setForm({ ...form, description: t })}
       />
 
-      <Text style={styles.label}>Identity Validation</Text>
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+      <Text style={styles.label}>Ubicación de Trabajo</Text>
+      <View style={styles.locationContainer}>
+        {form.latitude ? (
+          <MapView style={styles.map} region={region}>
+            <Marker
+              coordinate={{
+                latitude: form.latitude,
+                longitude: form.longitude!,
+              }}
+            />
+          </MapView>
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Text>El mapa aparecerá al fijar tu ubicación</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.locationButton}
+          onPress={getLocation}
+          disabled={loadingLocation}
+        >
+          {loadingLocation ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="location" size={20} color="#fff" />
+              <Text style={styles.locationButtonText}>
+                Obtener ubicación actual
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.addressText}>{address}</Text>
+      </View>
+
+      <Text style={styles.label}>Validación de Identidad</Text>
+      <TouchableOpacity
+        style={styles.imagePicker}
+        onPress={() => {
+          /* pickImage function */
+        }}
+      >
         {image ? (
           <Image source={{ uri: image }} style={styles.preview} />
         ) : (
-          <Text style={styles.imagePickerText}>📸 Upload DNI front photo</Text>
+          <Text>📸 Subir foto del DNI</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={saveProfile}>
-        <Text style={styles.buttonText}>Save Profile</Text>
+        <Text style={styles.buttonText}>Guardar Perfil</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -130,7 +210,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: 60,
   },
-  title: { fontSize: 26, fontWeight: "bold", marginBottom: 20, color: "#333" },
+  title: { fontSize: 26, fontWeight: "bold", marginBottom: 20 },
   label: {
     fontSize: 14,
     fontWeight: "bold",
@@ -143,22 +223,50 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
-    color: "#333",
+  },
+  locationContainer: {
+    backgroundColor: "#F2F2F7",
+    borderRadius: 15,
+    overflow: "hidden",
+    marginTop: 10,
+    padding: 10,
+  },
+  map: { width: "100%", height: 180, borderRadius: 10 },
+  mapPlaceholder: {
+    width: "100%",
+    height: 180,
+    backgroundColor: "#E5E5EA",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  locationButton: {
+    flexDirection: "row",
+    backgroundColor: "#28A745",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  locationButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
+  addressText: {
+    color: "#666",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 8,
   },
   imagePicker: {
     backgroundColor: "#F0F2F5",
-    height: 150,
+    height: 100,
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
     borderStyle: "dashed",
     borderWidth: 1,
     borderColor: "#ccc",
-    overflow: "hidden",
   },
-  imagePickerText: { color: "#007AFF", fontWeight: "600" },
-  preview: { width: "100%", height: "100%" },
+  preview: { width: "100%", height: "100%", borderRadius: 15 },
   button: {
     backgroundColor: "#007AFF",
     padding: 18,

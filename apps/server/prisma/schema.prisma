@@ -19,6 +19,8 @@ model User {
   jobsAsClient     Job[]          @relation("ClientJobs")
   jobsAsWorker     Job[]          @relation("WorkerJobs")
   bids             Bid[]          @relation("WorkerBids")
+  sentMessages Message[] @relation("SentMessages")
+  pushToken String?
 }
 
 model WorkerProfile {
@@ -33,6 +35,8 @@ model WorkerProfile {
 
   userId      Int      @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  latitude    Float?
+  longitude   Float?
 }
 
 model Job {
@@ -54,6 +58,7 @@ model Job {
 
   adjustments JobAdjustment[]
   bids        Bid[]
+  messages Message[]
 }
 
 model Bid {
@@ -90,4 +95,15 @@ enum JobStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false) // <--- Nuevo campo
+  senderId  Int
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  jobId     Int
+  job       Job      @relation(fields: [jobId], references: [id])
 }

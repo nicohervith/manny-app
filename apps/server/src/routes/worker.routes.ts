@@ -12,31 +12,60 @@ router.post(
   upload.single("dniPhoto"),
   async (req, res) => {
     try {
-      const { userId, occupation, description, dni, tarifaHora } = req.body;
+      // 1. Desestructuramos usando 'hourlyRate' (como viene del frontend)
+      const {
+        userId,
+        occupation,
+        description,
+        dni,
+        latitude,
+        longitude,
+        hourlyRate,
+      } = req.body;
 
-      // Si usas Cloudinary, la URL está en req.file.path
+      if (!userId) {
+        return res.status(400).json({ error: "El userId es obligatorio" });
+      }
+
       const fotoDniUrl = req.file ? req.file.path : null;
 
-      const profile = await prisma.workerProfile.create({
-        data: {
+      // 2. Usamos upsert: Si no existe lo crea, si existe lo actualiza
+      // Esto evita el error de "Perfil ya existente" si el usuario intenta editarlo
+      const profile = await prisma.workerProfile.upsert({
+        where: { userId: parseInt(userId) },
+        update: {
+          occupation,
+          description,
+          dni,
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
+          dniPhoto: fotoDniUrl || undefined, // Solo actualiza si hay foto nueva
+          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        },
+        create: {
           userId: parseInt(userId),
           occupation,
           description,
           dni,
-          dniPhoto: fotoDniUrl, // Guardamos la URL
-          hourlyRate: tarifaHora ? parseFloat(tarifaHora) : null, // Convertimos a número
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
+          dniPhoto: fotoDniUrl,
+          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
         },
       });
 
+      // 3. Asegurar que el rol cambie a WORKER
       await prisma.user.update({
         where: { id: parseInt(userId) },
         data: { role: "WORKER" },
       });
 
-      res.json({ message: "Perfil completado", profile });
+      res.json({ message: "Perfil completado con éxito", profile });
     } catch (error) {
-      console.error("Error detallado:", error);
-      res.status(500).json({ error: "No se pudo crear el perfil" });
+      console.error("Error en complete-profile:", error);
+      res
+        .status(500)
+        .json({ error: "No se pudo procesar el perfil profesional" });
     }
   },
 );

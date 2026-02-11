@@ -34,7 +34,6 @@ router.post("/apply", async (req, res) => {
   }
 });
 
-// Obtener todas las ofertas de un trabajador específico
 router.get("/worker/:workerId", async (req, res) => {
   try {
     const { workerId } = req.params;
@@ -43,17 +42,21 @@ router.get("/worker/:workerId", async (req, res) => {
       include: {
         job: {
           include: {
-            client: {
-              select: { name: true, email: true }
-            }
-          }
-        }
+            client: { 
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
+
     res.json(bids);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching your bids" });
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener historial de ofertas" });
   }
 });
 
