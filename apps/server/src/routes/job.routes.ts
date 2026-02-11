@@ -97,4 +97,57 @@ router.patch("/accept-bid", async (req, res) => {
   }
 });
 
+router.get("/feed/:workerId", async (req, res) => {
+  try {
+    const { workerId } = req.params;
+
+    // 1. Obtenemos la ubicación del trabajador
+    const worker = await prisma.workerProfile.findUnique({
+      where: { userId: parseInt(workerId) },
+      select: { latitude: true, longitude: true },
+    });
+
+    if (!worker || !worker.latitude || !worker.longitude) {
+      return res
+        .status(400)
+        .json({ error: "El trabajador no tiene ubicación configurada" });
+    }
+
+    const { latitude: wLat, longitude: wLon } = worker;
+
+    /**
+     * 2. Consulta SQL para calcular distancia (Haversine)
+     * 6371 es el radio de la tierra en KM.
+     * Filtramos tareas que estén "OPEN" y no sean del propio usuario.
+     */
+    const jobs = await prisma.$queryRaw`
+      SELECT 
+        t.id, 
+        t.title, 
+        t.description, 
+        t.budget, 
+        t.latitude, 
+        t.longitude,
+        u.name as creatorName,
+        (
+          6371 * acos(
+            cos(radians(${wLat})) * cos(radians(t.latitude)) * cos(radians(t.longitude) - radians(${wLon})) + 
+            sin(radians(${wLat})) * sin(radians(t.latitude))
+          )
+        ) AS distance
+      FROM "Task" t
+      JOIN "User" u ON t.creatorId = u.id
+      WHERE t.status = 'OPEN' 
+        AND t.creatorId != ${parseInt(workerId)}
+      ORDER BY distance ASC
+      LIMIT 20;
+    `;
+
+    res.json(jobs);
+  } catch (error) {
+    console.error("Error en el feed:", error);
+    res.status(500).json({ error: "No se pudo cargar el feed" });
+  }
+});
+
 export default router;

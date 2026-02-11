@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,13 +16,14 @@ import {
 import { API_URL } from "../../src/constants/Config";
 
 export default function MyJobsScreen() {
+  const router = useRouter(); // 2. Inicializar router
   const [myJobs, setMyJobs] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedJobBids, setSelectedJobBids] = useState([]);
   const [bidsModalVisible, setBidsModalVisible] = useState(false);
 
   const fetchMyJobs = async () => {
-    setRefreshing(true); // Feedback visual de carga
+    setRefreshing(true);
     const userData = await SecureStore.getItemAsync("userData");
     const user = JSON.parse(userData || "{}");
     try {
@@ -36,17 +38,10 @@ export default function MyJobsScreen() {
 
   const handleAcceptBid = async (jobId: number, workerId: number) => {
     try {
-      await axios.patch(`${API_URL}/api/jobs/accept-bid`, {
-        jobId,
-        workerId,
-      });
-
-      Alert.alert(
-        "Success!",
-        "Worker assigned. Contact them to start the job.",
-      );
+      await axios.patch(`${API_URL}/api/jobs/accept-bid`, { jobId, workerId });
+      Alert.alert("Success!", "Worker assigned.");
       setBidsModalVisible(false);
-      fetchMyJobs(); // Refrescamos la lista para que el estado cambie a IN_PROGRESS
+      fetchMyJobs();
     } catch (error) {
       Alert.alert("Error", "Could not assign worker.");
     }
@@ -59,6 +54,7 @@ export default function MyJobsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Mis Pedidos</Text>
+
       <FlatList
         data={myJobs}
         keyExtractor={(item) => item.id.toString()}
@@ -66,14 +62,13 @@ export default function MyJobsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={fetchMyJobs} />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}>
+          <View style={styles.card}>
             <View style={styles.row}>
               <Text style={styles.jobTitle}>{item.title}</Text>
               <View
                 style={[
                   styles.statusBadge,
                   {
-                    // Cambiado: item.status y "PENDING"
                     backgroundColor:
                       item.status === "PENDING" ? "#FFF3E0" : "#E8F5E9",
                   },
@@ -83,20 +78,12 @@ export default function MyJobsScreen() {
               </View>
             </View>
 
-            <View style={styles.offersRow}>
-              <Ionicons name="people" size={16} color="#007AFF" />
-              <Text style={styles.offersText}>
-                {/* Cambiado: item._count.bids */}
-                {item._count?.bids || 0} ofertas recibidas
-              </Text>
-            </View>
-
-            {/* Cambiado: item._count.bids */}
-            {item._count?.bids > 0 && (
+            {/* SI ESTÁ PENDIENTE: Mostrar botón para ver postulantes */}
+            {item.status === "PENDING" && item._count?.bids > 0 && (
               <TouchableOpacity
                 style={styles.viewBidsButton}
                 onPress={() => {
-                  setSelectedJobBids(item.bids); // Guardamos las ofertas de este trabajo
+                  setSelectedJobBids(item.bids);
                   setBidsModalVisible(true);
                 }}
               >
@@ -105,9 +92,29 @@ export default function MyJobsScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-          </TouchableOpacity>
+
+            {/* SI YA ESTÁ EN PROGRESO: Mostrar botón de CHAT */}
+            {item.status === "IN_PROGRESS" && (
+              <TouchableOpacity
+                style={styles.chatButton}
+                onPress={() =>
+                  router.push({
+                    pathname: "/chat/[jobId]",
+                    params: { jobId: item.id },
+                  })
+                }
+              >
+                <Ionicons name="chatbubbles" size={20} color="#fff" />
+                <Text style={styles.chatButtonText}>
+                  Hablar con el profesional
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       />
+
+      {/* MODAL DE BIDS (Se queda igual que antes) */}
       <Modal
         visible={bidsModalVisible}
         animationType="slide"
@@ -121,38 +128,19 @@ export default function MyJobsScreen() {
                 <Ionicons name="close-circle" size={30} color="#FF3B30" />
               </TouchableOpacity>
             </View>
-
             <FlatList
               data={selectedJobBids}
               keyExtractor={(bid) => bid.id.toString()}
               renderItem={({ item: bid }) => (
                 <View style={styles.bidCard}>
-                  <View style={styles.bidHeader}>
-                    <View>
-                      <Text style={styles.workerName}>{bid.worker.name}</Text>
-                      <Text style={styles.workerOccupation}>
-                        {bid.worker.profile?.occupation || "Profesional"}
-                      </Text>
-                    </View>
-                    <Text style={styles.bidPrice}>${bid.price}</Text>
-                  </View>
-
-                  <Text style={styles.bidMessage}>"{bid.message}"</Text>
-
-                  <View style={styles.bidFooter}>
-                    <Text style={styles.etaText}>
-                      <Ionicons name="time-outline" size={14} /> Llega en{" "}
-                      {bid.estimatedMin} min
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.acceptButton}
-                      onPress={() =>
-                        handleAcceptBid(selectedJobBids[0].jobId, bid.workerId)
-                      } // Usamos el ID de la oferta
-                    >
-                      <Text style={styles.acceptButtonText}>Aceptar</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={styles.workerName}>{bid.worker.name}</Text>
+                  <Text style={styles.bidPrice}>${bid.price}</Text>
+                  <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={() => handleAcceptBid(bid.jobId, bid.workerId)}
+                  >
+                    <Text style={styles.acceptButtonText}>Aceptar</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             />
@@ -251,4 +239,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   acceptButtonText: { color: "#fff", fontWeight: "bold" },
+  chatButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chatButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
 });
