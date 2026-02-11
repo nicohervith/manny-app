@@ -74,23 +74,23 @@ export default function ClientHomeScreen() {
           return (
             <TouchableOpacity style={styles.workerCard} activeOpacity={0.7}>
               <View style={styles.workerInfo}>
-                <Text style={styles.workerName}>{item.user.nombre}</Text>
+                <Text style={styles.workerName}>{item.user.name}</Text>
                 <Text style={styles.workerOficio}>
-                  {item.oficio || "General Service"}
+                  {item.occupation || "General Service"}
                 </Text>
                 <Text style={styles.workerDesc} numberOfLines={2}>
-                  {item.descripcion || "No description provided."}
+                  {item.description || "No description provided."}
                 </Text>
-                {item.tarifaHora && (
+                {item.hourlyRate && (
                   <Text style={styles.priceText}>
-                    Price: ${item.tarifaHora}/hr
+                    Price: ${item.hourlyRate}/hr
                   </Text>
                 )}
               </View>
 
               <View style={styles.imageContainer}>
-                {item.fotoDni ? (
-                  <Image source={{ uri: item.fotoDni }} style={styles.avatar} />
+                {item.dniPhoto ? (
+                  <Image source={{ uri: item.dniPhoto }} style={styles.avatar} />
                 ) : (
                   <View style={[styles.avatar, styles.placeholderAvatar]}>
                     <Text style={styles.placeholderText}>No Pic</Text>

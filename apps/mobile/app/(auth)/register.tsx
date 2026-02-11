@@ -14,7 +14,7 @@ import { API_URL } from "../../src/constants/Config";
 
 export default function RegisterScreen() {
   const [form, setForm] = useState({
-    nombre: "",
+    name: "",
     email: "",
     password: "",
     role: "CLIENT", // Valor por defecto
@@ -23,7 +23,7 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!form.nombre || !form.email || !form.password) {
+    if (!form.name || !form.email || !form.password) {
       Alert.alert("Error", "Completa todos los campos");
       return;
     }
@@ -57,7 +57,7 @@ export default function RegisterScreen() {
       <TextInput
         style={styles.input}
         placeholder="Nombre completo"
-        onChangeText={(text) => setForm({ ...form, nombre: text })}
+        onChangeText={(text) => setForm({ ...form, name: text })}
       />
 
       <TextInput

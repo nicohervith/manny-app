@@ -2,8 +2,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import authRoutes from "./routes/auth.routes.js";
-import workerRoutes from "./routes/worker.routes.js";
+import bidRoutes from "./routes/bid.routes.js";
 import jobRoutes from "./routes/job.routes.js";
+import workerRoutes from "./routes/worker.routes.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/worker", workerRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/bids", bidRoutes);
 
 // Ruta de prueba
 app.get("/health", (req, res) => {

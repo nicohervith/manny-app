@@ -1,15 +1,12 @@
-import { Tabs } from "expo-router";
-import React from "react";
+import { Stack } from "expo-router";
 
-export default function TabLayout() {
+export default function RootLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Inicio",
-        }}
-      />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* El grupo (auth) maneja login/register */}
+      <Stack.Screen name="(auth)" />
+      {/* El grupo (tabs) maneja la app principal */}
+      <Stack.Screen name="(tabs)" />
+    </Stack>
   );
 }

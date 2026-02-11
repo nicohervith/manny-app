@@ -7,35 +7,39 @@ const router = Router();
 
 // apps/server/src/routes/worker.routes.ts
 
-router.post("/complete-profile", upload.single("fotoDni"), async (req, res) => {
-  try {
-    const { userId, oficio, descripcion, dni, tarifaHora } = req.body;
+router.post(
+  "/complete-profile",
+  upload.single("dniPhoto"),
+  async (req, res) => {
+    try {
+      const { userId, occupation, description, dni, tarifaHora } = req.body;
 
-    // Si usas Cloudinary, la URL está en req.file.path
-    const fotoDniUrl = req.file ? req.file.path : null;
+      // Si usas Cloudinary, la URL está en req.file.path
+      const fotoDniUrl = req.file ? req.file.path : null;
 
-    const profile = await prisma.workerProfile.create({
-      data: {
-        userId: parseInt(userId),
-        oficio,
-        descripcion,
-        dni,
-        fotoDni: fotoDniUrl, // Guardamos la URL
-        tarifaHora: tarifaHora ? parseFloat(tarifaHora) : null, // Convertimos a número
-      },
-    });
+      const profile = await prisma.workerProfile.create({
+        data: {
+          userId: parseInt(userId),
+          occupation,
+          description,
+          dni,
+          dniPhoto: fotoDniUrl, // Guardamos la URL
+          hourlyRate: tarifaHora ? parseFloat(tarifaHora) : null, // Convertimos a número
+        },
+      });
 
-    await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: { role: "WORKER" },
-    });
+      await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: { role: "WORKER" },
+      });
 
-    res.json({ message: "Perfil completado", profile });
-  } catch (error) {
-    console.error("Error detallado:", error);
-    res.status(500).json({ error: "No se pudo crear el perfil" });
-  }
-});
+      res.json({ message: "Perfil completado", profile });
+    } catch (error) {
+      console.error("Error detallado:", error);
+      res.status(500).json({ error: "No se pudo crear el perfil" });
+    }
+  },
+);
 
 // Agregar este GET a tu archivo de rutas de worker
 router.get("/list", async (req, res) => {
@@ -44,7 +48,7 @@ router.get("/list", async (req, res) => {
       include: {
         user: {
           select: {
-            nombre: true,
+            name: true,
             email: true,
           },
         },

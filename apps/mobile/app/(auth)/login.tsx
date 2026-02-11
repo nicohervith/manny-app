@@ -30,11 +30,13 @@ export default function LoginScreen() {
 
       // Dentro de handleLogin en login.tsx
       const { token, user } = response.data;
-
       await SecureStore.setItemAsync("userToken", token);
-      await SecureStore.setItemAsync("userData", JSON.stringify(user));
-
-      if (user.role === "WORKER" && !user.perfil) {
+      /*  await SecureStore.setItemAsync("userData", JSON.stringify(user)); */
+      await SecureStore.setItemAsync(
+        "userData",
+        JSON.stringify(response.data.user),
+      );
+      if (user.role === "WORKER" && !user.profile) {
         // Si es trabajador y no tiene perfil, lo mandamos a completar
         router.replace("/worker/complete-profile");
       } else {

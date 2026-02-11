@@ -1,5 +1,7 @@
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
   Alert,
@@ -8,22 +10,22 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
+  TouchableOpacity
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
-import * as SecureStore from "expo-secure-store";
 
 export default function CompleteProfileScreen() {
+  const router = useRouter();
   const [form, setForm] = useState({
-    oficio: "",
+    occupation: "", 
     dni: "",
-    descripcion: "",
+    description: "", 
   });
   const [image, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.5,
     });
@@ -34,27 +36,28 @@ export default function CompleteProfileScreen() {
   };
 
   const saveProfile = async () => {
-    const formData = new FormData();
     const userDataRaw = await SecureStore.getItemAsync("userData");
     const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
 
     if (!userData) {
-      Alert.alert("Error", "No se encontró sesión de usuario");
+      Alert.alert("Error", "No session found");
       return;
     }
 
+    // Usamos FormData para el envío de archivos (Multer en backend)
+    const formData = new FormData();
     formData.append("userId", userData.id.toString());
-    formData.append("oficio", form.oficio);
+    formData.append("occupation", form.occupation);
     formData.append("dni", form.dni);
-    formData.append("descripcion", form.descripcion);
+    formData.append("description", form.description);
 
-    // Agregar la imagen
     if (image) {
       const filename = image.split("/").pop();
       const match = /\.(\w+)$/.exec(filename || "");
       const type = match ? `image/${match[1]}` : `image`;
 
-      formData.append("fotoDni", {
+      formData.append("dniPhoto", {
+        // Antes: fotoDni
         uri: image,
         name: filename,
         type,
@@ -62,94 +65,107 @@ export default function CompleteProfileScreen() {
     }
 
     try {
-      const response = await axios.post(
-        `${API_URL}/api/worker/complete-profile`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
-      Alert.alert("Éxito", "Tu perfil profesional ha sido creado.");
+      await axios.post(`${API_URL}/api/worker/complete-profile`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Alert.alert("Success", "Your professional profile has been created.");
+      router.replace("/(tabs)/worker-feed"); // Redirigir al feed de trabajos
     } catch (error) {
-      Alert.alert("Error", "No se pudo subir el perfil.");
+      console.error(error);
+      Alert.alert("Error", "Could not upload profile.");
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Perfil Profesional</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Professional Profile</Text>
 
-      <Text style={styles.label}>Oficio / Profesión</Text>
+      <Text style={styles.label}>Occupation</Text>
       <TextInput
         style={styles.input}
-        placeholder="Ej: Carpintero, Programador..."
-        onChangeText={(t) => setForm({ ...form, oficio: t })}
+        placeholder="Ej: Plumber, Electrician..."
+        placeholderTextColor="#999"
+        onChangeText={(t) => setForm({ ...form, occupation: t })}
       />
 
-      <Text style={styles.label}>Número de DNI</Text>
+      <Text style={styles.label}>DNI Number</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
+        placeholder="Identity number"
+        placeholderTextColor="#999"
         onChangeText={(t) => setForm({ ...form, dni: t })}
       />
 
-      <Text style={styles.label}>Cuéntanos sobre tu experiencia</Text>
+      <Text style={styles.label}>Experience / Bio</Text>
       <TextInput
-        style={[styles.input, { height: 100 }]}
+        style={[styles.input, { height: 100, textAlignVertical: "top" }]}
         multiline
-        placeholder="Describe tu trabajo..."
-        onChangeText={(t) => setForm({ ...form, descripcion: t })}
+        placeholder="Tell clients about your work experience..."
+        placeholderTextColor="#999"
+        onChangeText={(t) => setForm({ ...form, description: t })}
       />
 
-      <Text style={styles.label}>Validación de Identidad</Text>
+      <Text style={styles.label}>Identity Validation</Text>
       <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
         {image ? (
           <Image source={{ uri: image }} style={styles.preview} />
         ) : (
-          <Text style={styles.imagePickerText}>
-            📸 Subir foto de frente del DNI
-          </Text>
+          <Text style={styles.imagePickerText}>📸 Upload DNI front photo</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={saveProfile}>
-        <Text style={styles.buttonText}>Guardar Perfil</Text>
+        <Text style={styles.buttonText}>Save Profile</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#333" },
-  label: { fontSize: 16, fontWeight: "600", marginBottom: 5, marginTop: 15 },
+  container: {
+    padding: 25,
+    backgroundColor: "#fff",
+    flexGrow: 1,
+    paddingTop: 60,
+  },
+  title: { fontSize: 26, fontWeight: "bold", marginBottom: 20, color: "#333" },
+  label: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 5,
+    color: "#555",
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#F0F2F5",
+    borderRadius: 10,
+    padding: 15,
     fontSize: 16,
+    color: "#333",
   },
   imagePicker: {
+    backgroundColor: "#F0F2F5",
     height: 150,
-    borderStyle: "dashed",
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    borderRadius: 10,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
+    borderStyle: "dashed",
+    borderWidth: 1,
+    borderColor: "#ccc",
     overflow: "hidden",
   },
-  imagePickerText: { color: "#007AFF", fontWeight: "bold" },
+  imagePickerText: { color: "#007AFF", fontWeight: "600" },
   preview: { width: "100%", height: "100%" },
   button: {
     backgroundColor: "#007AFF",
     padding: 18,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 30,
-    marginBottom: 50,
+    marginBottom: 40,
   },
-  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
 });
