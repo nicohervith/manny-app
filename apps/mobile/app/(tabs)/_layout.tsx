@@ -115,9 +115,10 @@ export default function TabLayout() {
         name="create-job"
         options={{
           title: "Publicar",
-          href: role === "CLIENT" ? "/create-job" : (null as any),
+          // href controla la visibilidad para el Worker
+          href: role === "CLIENT" ? "/create-job" : null,
           tabBarIcon: ({ color }) => (
-            <Ionicons name="add-circle" size={24} color={color} />
+            <Ionicons name="add-circle" size={28} color={color} />
           ),
         }}
       />

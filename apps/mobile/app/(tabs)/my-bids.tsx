@@ -1,17 +1,18 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
-import { useRouter, useFocusEffect } from "expo-router"; // 1. Agregamos useFocusEffect
-import * as SecureStore from "expo-secure-store";
-import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import { useFocusEffect, useRouter } from "expo-router"; // 1. Agregamos useFocusEffect
+import * as SecureStore from "expo-secure-store";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { API_URL } from "../../src/constants/Config";
 
 export default function MyBidsScreen() {
@@ -36,6 +37,31 @@ export default function MyBidsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleFinishJob = async (jobId: number) => {
+    Alert.alert(
+      "Finalizar Trabajo",
+      "¿Confirmas que has completado este trabajo? Se le notificará al cliente para que pueda calificarte.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sí, terminar",
+          onPress: async () => {
+            try {
+              // Esta URL ahora coincide con el router.patch("/:id/status") de jobs.routes
+              await axios.patch(`${API_URL}/api/jobs/${jobId}/status`, {
+                status: "COMPLETED",
+              });
+              Alert.alert("Éxito", "Has marcado el trabajo como completado.");
+              fetchMyBids();
+            } catch (error) {
+              Alert.alert("Error", "No se pudo actualizar el estado.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   // 2. Esto hace que la pantalla se actualice cada vez que entras a la pestaña
@@ -121,6 +147,26 @@ export default function MyBidsScreen() {
                   <Ionicons name="chatbubbles-outline" size={20} color="#fff" />
                   <Text style={styles.chatButtonText}>
                     Hablar con el Cliente
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* NUEVO: Botón de Finalizar */}
+              {item.job?.status === "IN_PROGRESS" && (
+                <TouchableOpacity
+                  style={[
+                    styles.chatButton,
+                    { backgroundColor: "#28A745", marginTop: 8 },
+                  ]}
+                  onPress={() => handleFinishJob(item.job.id)}
+                >
+                  <Ionicons
+                    name="checkmark-done-circle-outline"
+                    size={20}
+                    color="#fff"
+                  />
+                  <Text style={styles.chatButtonText}>
+                    Marcar como Terminado
                   </Text>
                 </TouchableOpacity>
               )}

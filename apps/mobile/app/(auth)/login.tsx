@@ -36,11 +36,14 @@ export default function LoginScreen() {
         "userData",
         JSON.stringify(response.data.user),
       );
+      // Dentro de handleLogin en login.tsx
       if (user.role === "WORKER" && !user.profile) {
-        // Si es trabajador y no tiene perfil, lo mandamos a completar
         router.replace("/worker/complete-profile");
+      } else if (user.role === "WORKER") {
+        // Ir directamente al feed de trabajos
+        router.replace("/(tabs)/worker-feed");
       } else {
-        // Clientes o Trabajadores con perfil completo van a la Home
+        // Clientes van a la búsqueda de profesionales
         router.replace("/(tabs)");
       }
     } catch (error: any) {

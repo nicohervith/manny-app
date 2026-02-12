@@ -1,21 +1,36 @@
+import axios from "axios";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
   ActivityIndicator,
+  FlatList,
+  Image,
   RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import axios from "axios";
 import { API_URL } from "../../src/constants/Config";
 
 export default function ClientHomeScreen() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    const checkRedirect = async () => {
+      const userData = await SecureStore.getItemAsync("userData");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role === "WORKER") {
+          router.replace("/worker-feed");
+        }
+      }
+    };
+    checkRedirect();
+  }, []);
 
   const fetchWorkers = async () => {
     try {
@@ -90,7 +105,10 @@ export default function ClientHomeScreen() {
 
               <View style={styles.imageContainer}>
                 {item.dniPhoto ? (
-                  <Image source={{ uri: item.dniPhoto }} style={styles.avatar} />
+                  <Image
+                    source={{ uri: item.dniPhoto }}
+                    style={styles.avatar}
+                  />
                 ) : (
                   <View style={[styles.avatar, styles.placeholderAvatar]}>
                     <Text style={styles.placeholderText}>No Pic</Text>

@@ -35,7 +35,7 @@ export default function ChatScreen() {
 
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
-
+  const [job, setJob] = useState<any>(null);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,9 +94,9 @@ export default function ChatScreen() {
         setUserId(user.id);
         setUserName(user.name);
       }
-
       const res = await axios.get(`${API_URL}/api/chat/${jobId}`);
-      setMessages(res.data);
+      setMessages(res.data.messages || res.data);
+      setJob(res.data.job || res.data); 
 
       socket.emit("join-chat", jobId);
       setLoading(false);
@@ -176,6 +176,20 @@ export default function ChatScreen() {
         <Text style={styles.headerTitle}>Chat del Trabajo</Text>
         <View style={{ width: 24 }} />
       </View>
+
+      {job?.status === "COMPLETED" && (
+        <View style={styles.completedBanner}>
+          <Ionicons
+            name="information-circle"
+            size={16}
+            color="#92400E"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.completedBannerText}>
+            Trabajo completado. Este chat se cerrará en 24 horas.
+          </Text>
+        </View>
+      )}
 
       <FlatList
         ref={flatListRef}
@@ -319,4 +333,19 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   sendButtonDisabled: { backgroundColor: "#B0D4FF" },
+  completedBanner: {
+    backgroundColor: "#FFFBEB",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#FEF3C7",
+  },
+  completedBannerText: {
+    color: "#92400E",
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
 });

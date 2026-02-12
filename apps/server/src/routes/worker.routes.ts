@@ -28,9 +28,6 @@ router.post(
       }
 
       const fotoDniUrl = req.file ? req.file.path : null;
-
-      // 2. Usamos upsert: Si no existe lo crea, si existe lo actualiza
-      // Esto evita el error de "Perfil ya existente" si el usuario intenta editarlo
       const profile = await prisma.workerProfile.upsert({
         where: { userId: parseInt(userId) },
         update: {
@@ -87,6 +84,59 @@ router.get("/list", async (req, res) => {
     res.json(workers);
   } catch (error) {
     res.status(500).json({ error: "Error fetching workers" });
+  }
+});
+
+// apps/server/src/routes/worker.routes.ts
+
+router.get("/profile/:userId", async (req, res) => {
+  try {
+    const profile = await prisma.workerProfile.findUnique({
+      where: { userId: parseInt(req.params.userId) },
+      include: {
+        user: {
+          select: {
+            name: true,
+            receivedReviews: {
+              include: {
+                reviewer: { select: { name: true } } // Para saber quién comentó
+              },
+              orderBy: { createdAt: 'desc' } // Más recientes primero
+            },
+          },
+        },
+      },
+    });
+
+    if (!profile) return res.status(404).json({ error: "No profile" });
+
+    const reviews = profile.user.receivedReviews;
+    const averageRating = reviews.length > 0
+        ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
+        : 0;
+
+    res.json({ 
+      ...profile, 
+      averageRating: averageRating.toFixed(1), 
+      totalReviews: reviews.length,
+      reviews: reviews // Enviamos la lista completa al front
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PATCH /api/jobs/:id/complete-worker
+router.patch("/:id/complete-worker", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const job = await prisma.job.update({
+      where: { id: parseInt(id) },
+      data: { status: "COMPLETED" }, 
+    });
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: "No se pudo actualizar el estado" });
   }
 });
 

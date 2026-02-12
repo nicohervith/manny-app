@@ -61,6 +61,7 @@ router.get("/client/:clientId", async (req, res) => {
         _count: {
           select: { bids: true },
         },
+        review: true,
         bids: {
           include: {
             worker: {
@@ -147,6 +148,63 @@ router.get("/feed/:workerId", async (req, res) => {
   } catch (error) {
     console.error("Error en el feed:", error);
     res.status(500).json({ error: "No se pudo cargar el feed" });
+  }
+});
+
+// apps/server/src/routes/jobs.routes.ts
+
+router.post("/accept-bid", async (req, res) => {
+  try {
+    const { jobId, workerId, bidId } = req.body;
+
+    // Usamos una transacción para asegurar que ambos cambios ocurran o ninguno
+    // Importa el Enum si es necesario o úsalo como string si Prisma lo permite
+    await prisma.$transaction([
+      // 1. Actualizar el Trabajo
+      prisma.job.update({
+        // Asegúrate si es .task o .job según tu schema
+        where: { id: parseInt(jobId) },
+        data: {
+          status: "IN_PROGRESS",
+          workerId: parseInt(workerId),
+        },
+      }),
+      // 2. Aceptar la oferta elegida
+      prisma.bid.update({
+        where: { id: parseInt(bidId) },
+        data: { status: "ACCEPTED" }, // Ahora TypeScript reconocerá 'status'
+      }),
+      // 3. Rechazar las demás
+      prisma.bid.updateMany({
+        where: {
+          jobId: parseInt(jobId),
+          NOT: { id: parseInt(bidId) },
+        },
+        data: { status: "REJECTED" },
+      }),
+    ]);
+
+    res.json({ message: "Trabajador asignado con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al aceptar la oferta" });
+  }
+});
+
+router.patch("/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; 
+
+  try {
+    const updatedJob = await prisma.job.update({
+      where: { id: parseInt(id) },
+      data: { status: status },
+    });
+
+    res.json({ message: "Estado actualizado con éxito", job: updatedJob });
+  } catch (error) {
+    console.error("Error al actualizar estado del trabajo:", error);
+    res.status(500).json({ error: "No se pudo actualizar el trabajo" });
   }
 });
 
