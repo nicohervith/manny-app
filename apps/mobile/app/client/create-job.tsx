@@ -98,11 +98,12 @@ export default function CreateJobScreen() {
         "¡Publicado!",
         "Tu solicitud ya es visible para los trabajadores cercanos.",
       );
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/my-jobs");
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Hubo un problema al conectar con el servidor.");
     } finally {
+      
       setIsSubmitting(false);
     }
   };

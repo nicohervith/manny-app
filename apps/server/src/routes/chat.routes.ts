@@ -1,19 +1,15 @@
-/* import { Expo } from "expo-server-sdk"; */
-/* const expo = new Expo(); */
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
-// Enviar un mensaje
-// apps/server/src/routes/chat.routes.ts
 router.post("/send", async (req, res) => {
   try {
     const { jobId, senderId, content } = req.body;
 
     const message = await prisma.message.create({
       data: {
-        jobId: parseInt(jobId), // Convertir a número
+        jobId: parseInt(jobId), 
         senderId: parseInt(senderId),
         content,
       },
@@ -21,7 +17,6 @@ router.post("/send", async (req, res) => {
     });
 
     const io = req.app.get("io");
-    // Emitir a la sala "chat_X"
     io.to(`chat_${jobId}`).emit("new-message", message);
 
     res.json(message);
@@ -29,7 +24,6 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: "Error sending message" });
   }
 });
-// Obtener mensajes de un trabajo
 router.get("/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -90,12 +84,11 @@ router.get("/list/:userId", async (req, res) => {
     });
     res.json(chats);
   } catch (error) {
-    console.error(error); // Agregamos log para debug
+    console.error(error); 
     res.status(500).json({ error: "Error al obtener lista de chats" });
   }
 });
 
-// Endpoint para marcar como leído
 router.patch("/read-all/:jobId/:userId", async (req, res) => {
   const { jobId, userId } = req.params;
   await prisma.message.updateMany({
