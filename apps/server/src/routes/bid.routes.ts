@@ -60,6 +60,8 @@ router.get("/worker/:workerId", async (req, res) => {
   }
 });
 
+// apps/server/src/routes/bid.routes.ts
+
 router.get("/job/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -67,13 +69,37 @@ router.get("/job/:jobId", async (req, res) => {
       where: { jobId: parseInt(jobId) },
       include: {
         worker: {
-          // Traemos nombre del trabajador
-          select: { name: true, id: true },
+          select: { 
+            name: true, 
+            id: true,
+            receivedReviews: {
+              select: { rating: true }
+            }
+          },
         },
       },
-      orderBy: { price: "asc" }, // Mostrar los más baratos primero
+      orderBy: { price: "asc" },
     });
-    res.json(bids);
+
+    // Mapeamos los resultados para calcular el promedio y total de reseñas antes de enviar
+    const formattedBids = bids.map(bid => {
+      const reviews = bid.worker.receivedReviews;
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0 
+        ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews).toFixed(1)
+        : "0.0";
+
+      return {
+        ...bid,
+        worker: {
+          ...bid.worker,
+          averageRating,
+          totalReviews
+        }
+      };
+    });
+
+    res.json(formattedBids);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener ofertas" });
   }

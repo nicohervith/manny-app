@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -77,21 +78,42 @@ export default function JobBidsScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.bidCard}>
+            {/* HEADER: Información del trabajador y enlace al perfil */}
             <View style={styles.headerRow}>
-              <View style={styles.workerInfo}>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/client/worker-profile/[id]",
+                    params: { id: item.workerId },
+                  })
+                }
+                style={styles.workerInfoContainer}
+              >
                 <Text style={styles.workerName}>{item.worker.name}</Text>
-                <Text style={styles.rating}>⭐ 4.8 (15 reseñas)</Text>
-              </View>
+                <Text style={styles.rating}>
+                  ⭐ {item.worker.averageRating} ({item.worker.totalReviews}{" "}
+                  reseñas)
+                  <Text style={styles.viewProfileLink}> • Ver perfil</Text>
+                </Text>
+              </TouchableOpacity>
+
               <Text style={styles.price}>${item.price}</Text>
             </View>
 
+            {/* CUERPO: Mensaje de la propuesta */}
             <Text style={styles.messageLabel}>Propuesta:</Text>
-            <Text style={styles.messageText}>{item.message}</Text>
+            <Text style={styles.messageText}>"{item.message}"</Text>
 
+            {/* FOOTER: Separado visualmente con un borde o margen */}
             <View style={styles.footerRow}>
-              <Text style={styles.timeText}>
-                ⏱ {item.estimatedMin} min estimación
-              </Text>
+              <View style={styles.timeContainer}>
+                <Ionicons name="time-outline" size={14} color="#666" />
+                <Text style={styles.timeText}>
+                  {" "}
+                  {item.estimatedMin} min estimación
+                </Text>
+              </View>
+
               <TouchableOpacity
                 style={styles.acceptButton}
                 onPress={() => handleAcceptWorker(item)}
@@ -99,18 +121,6 @@ export default function JobBidsScreen() {
                 <Text style={styles.acceptButtonText}>Aceptar</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/client/worker-profile/[id]",
-                  params: { id: item.workerId }, // ID del usuario/trabajador
-                })
-              }
-              style={styles.workerInfo}
-            >
-              <Text style={styles.workerName}>{item.worker.name}</Text>
-              <Text style={styles.rating}>⭐ Ver Perfil y Reseñas</Text>
-            </TouchableOpacity>
           </View>
         )}
       />
@@ -125,49 +135,81 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
   },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#1A1A1A",
+  },
   bidCard: {
     backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 15,
-    elevation: 2,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    // Sombra más suave y moderna
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  workerName: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  workerInfo: { flex: 1 },
-  rating: { fontSize: 12, color: "#666" },
-  price: { fontSize: 20, fontWeight: "bold", color: "#28A745" },
+  workerInfoContainer: {
+    flex: 1,
+  },
+  workerName: { fontSize: 18, fontWeight: "700", color: "#333" },
+  rating: { fontSize: 13, color: "#666", marginTop: 2 },
+  viewProfileLink: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  price: { fontSize: 22, fontWeight: "800", color: "#28A745" },
+
   messageLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "bold",
-    color: "#999",
-    marginTop: 10,
+    color: "#BBB",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   messageText: {
     fontSize: 15,
     color: "#444",
-    fontStyle: "italic",
-    marginVertical: 5,
+    lineHeight: 20,
+    marginVertical: 8,
   },
+
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 10,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0", // Línea sutil de separación
+  },
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   timeText: { color: "#666", fontSize: 13 },
+
   acceptButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    // Pequeña sombra al botón para que resalte
+    shadowColor: "#007AFF",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  acceptButtonText: { color: "#fff", fontWeight: "bold" },
-  empty: { textAlign: "center", marginTop: 50, color: "#999" },
+  acceptButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
+  empty: { textAlign: "center", marginTop: 50, color: "#999", fontSize: 16 },
 });

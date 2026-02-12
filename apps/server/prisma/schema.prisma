@@ -19,8 +19,54 @@ model User {
   jobsAsClient     Job[]          @relation("ClientJobs")
   jobsAsWorker     Job[]          @relation("WorkerJobs")
   bids             Bid[]          @relation("WorkerBids")
-  sentMessages Message[] @relation("SentMessages")
-  pushToken String?
+  sentMessages     Message[]      @relation("SentMessages")
+  
+  // CAMPOS AÑADIDOS PARA LAS REVIEWS:
+  sentReviews      Review[]       @relation("SentReviews")
+  receivedReviews  Review[]       @relation("ReceivedReviews")
+  
+  pushToken        String?
+}
+
+model Job {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String          @db.Text
+  status      JobStatus       @default(PENDING)
+  budget      Float?
+  latitude    Float?
+  longitude   Float?
+  address     String?
+  createdAt   DateTime        @default(now())
+  updatedAt DateTime @updatedAt
+  clientId    Int
+  client      User            @relation("ClientJobs", fields: [clientId], references: [id])
+
+  workerId    Int?
+  worker      User?           @relation("WorkerJobs", fields: [workerId], references: [id])
+
+  adjustments JobAdjustment[]
+  bids        Bid[]
+  messages    Message[]
+  
+  // CAMPO AÑADIDO PARA LA REVIEW:
+  review      Review?         // Un trabajo puede tener una reseña
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  rating     Int      // 1 a 5
+  comment    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  jobId      Int      @unique
+  job        Job      @relation(fields: [jobId], references: [id])
+  
+  reviewerId Int
+  reviewer   User     @relation("SentReviews", fields: [reviewerId], references: [id])
+  
+  workerId   Int
+  worker     User     @relation("ReceivedReviews", fields: [workerId], references: [id])
 }
 
 model WorkerProfile {
@@ -37,28 +83,6 @@ model WorkerProfile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   latitude    Float?
   longitude   Float?
-}
-
-model Job {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String        @db.Text
-  status      JobStatus     @default(PENDING)
-  budget      Float?
-  latitude    Float?
-  longitude   Float?
-  address     String?
-  createdAt   DateTime      @default(now())
-
-  clientId    Int
-  client      User          @relation("ClientJobs", fields: [clientId], references: [id])
-
-  workerId    Int?
-  worker      User?         @relation("WorkerJobs", fields: [workerId], references: [id])
-
-  adjustments JobAdjustment[]
-  bids        Bid[]
-  messages Message[]
 }
 
 model Bid {

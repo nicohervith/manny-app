@@ -1,35 +1,43 @@
-import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Modal,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import axios from "axios";
+import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../src/constants/Config";
-
 export default function MyJobsScreen() {
   const router = useRouter();
   const [myJobs, setMyJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Estados para el Modal de Reseña
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+
   const fetchMyJobs = async () => {
-    setRefreshing(true);
     try {
       const userData = await SecureStore.getItemAsync("userData");
       const user = JSON.parse(userData || "{}");
       const res = await axios.get(`${API_URL}/api/jobs/client/${user.id}`);
       setMyJobs(res.data);
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching jobs:", e);
     } finally {
+      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -37,6 +45,45 @@ export default function MyJobsScreen() {
   useEffect(() => {
     fetchMyJobs();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchMyJobs();
+  };
+
+  const submitReview = async () => {
+    if (!comment.trim()) {
+      Alert.alert("Atención", "Por favor deja un breve comentario.");
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/api/reviews`, {
+        jobId: selectedJob.id,
+        workerId: selectedJob.workerId,
+        reviewerId: selectedJob.clientId,
+        rating: rating,
+        comment: comment,
+      });
+
+      Alert.alert("¡Éxito!", "Tu calificación ha sido enviada.");
+      setRatingModalVisible(false);
+      setComment(""); // Limpiar comentario
+      setRating(5); // Reset estrellas
+      fetchMyJobs(); // Refrescar para ocultar el botón de calificar
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "No se pudo enviar la reseña.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -46,164 +93,280 @@ export default function MyJobsScreen() {
         data={myJobs}
         keyExtractor={(item) => item.id.toString()}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={fetchMyJobs} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <Text style={styles.jobTitle}>{item.title}</Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor:
-                      item.status === "PENDING" ? "#FFF3E0" : "#E8F5E9",
-                  },
-                ]}
-              >
-                <Text style={styles.statusText}>{item.status}</Text>
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            No has publicado ningún trabajo aún.
+          </Text>
+        }
+        renderItem={({ item }) => {
+          const isPending = item.status === "PENDING";
+          const isInProgress = item.status === "IN_PROGRESS";
+          const isCompleted = item.status === "COMPLETED";
+          const hasBeenRated = !!item.review; // Si existe el objeto review
+
+          return (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.jobTitle}>{item.title}</Text>
+                <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
+                  <Text style={styles.statusText}>{item.status}</Text>
+                </View>
               </View>
+
+              <Text style={styles.jobDate}>
+                Publicado el: {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
+
+              {/* LÓGICA DE BOTONES SEGÚN ESTADO */}
+
+              {isPending && (
+                <TouchableOpacity
+                  style={styles.viewBidsButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/client/job-bids/[id]",
+                      params: { id: item.id.toString() },
+                    })
+                  }
+                >
+                  <Text style={styles.viewBidsText}>
+                    {item._count?.bids > 0
+                      ? `Ver ${item._count.bids} Postulantes`
+                      : "Sin postulantes aún"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {isInProgress && (
+                <TouchableOpacity
+                  style={styles.chatButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/chat/[jobId]",
+                      params: { jobId: item.id },
+                    })
+                  }
+                >
+                  <Ionicons name="chatbubbles" size={20} color="#fff" />
+                  <Text style={styles.chatButtonText}>
+                    Hablar con el profesional
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {isCompleted && !hasBeenRated && (
+                <TouchableOpacity
+                  style={styles.rateButton}
+                  onPress={() => {
+                    setSelectedJob(item);
+                    setRatingModalVisible(true);
+                  }}
+                >
+                  <Ionicons name="star" size={20} color="#fff" />
+                  <Text style={styles.rateButtonText}>Calificar Servicio</Text>
+                </TouchableOpacity>
+              )}
+
+              {isCompleted && hasBeenRated && (
+                <View style={styles.completedBadge}>
+                  <Ionicons
+                    name="checkmark-done-circle"
+                    size={20}
+                    color="#28A745"
+                  />
+                  <Text style={styles.completedBadgeText}>
+                    Finalizado y Calificado
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        }}
+      />
+
+      {/* MODAL DE CALIFICACIÓN */}
+      <Modal visible={ratingModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeModal}
+              onPress={() => setRatingModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>¡Trabajo Terminado!</Text>
+            <Text style={styles.modalSubtitle}>
+              ¿Cómo calificarías el servicio?
+            </Text>
+
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                  <Ionicons
+                    name={star <= rating ? "star" : "star-outline"}
+                    size={42}
+                    color="#FFD700"
+                  />
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {/* SI ESTÁ PENDIENTE: Navegar a la nueva pantalla de postulantes */}
-            {item.status === "PENDING" && (
-              <TouchableOpacity
-                style={styles.viewBidsButton}
-                onPress={() => {
-                  router.push({
-                    pathname: "/client/job-bids/[id]", // La ruta estática del archivo
-                    params: { id: item.id.toString() }, // El valor dinámico
-                  });
-                }}
-              >
-                <Text style={styles.viewBidsText}>
-                  {item._count?.bids > 0
-                    ? `Ver ${item._count.bids} Postulantes`
-                    : "Sin postulantes aún"}
-                </Text>
-              </TouchableOpacity>
-            )}
+            <TextInput
+              style={styles.reviewInput}
+              placeholder="Escribe un breve comentario sobre el profesional..."
+              multiline
+              numberOfLines={4}
+              onChangeText={setComment}
+              value={comment}
+            />
 
-            {/* SI YA ESTÁ EN PROGRESO: Botón de CHAT */}
-            {item.status === "IN_PROGRESS" && (
-              <TouchableOpacity
-                style={styles.chatButton}
-                onPress={() =>
-                  router.push({
-                    pathname: "/chat/[jobId]",
-                    params: { jobId: item.id },
-                  })
-                }
-              >
-                <Ionicons name="chatbubbles" size={20} color="#fff" />
-                <Text style={styles.chatButtonText}>
-                  Hablar con el profesional
-                </Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={submitReview}
+            >
+              <Text style={styles.confirmButtonText}>Enviar Calificación</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      />
+        </View>
+      </Modal>
     </View>
   );
 }
 
+// Helper para colores de badges
+const getStatusStyle = (status: string) => {
+  switch (status) {
+    case "PENDING":
+      return { backgroundColor: "#FFF3E0" };
+    case "IN_PROGRESS":
+      return { backgroundColor: "#E3F2FD" };
+    case "COMPLETED":
+      return { backgroundColor: "#E8F5E9" };
+    default:
+      return { backgroundColor: "#F5F5F5" };
+  }
+};
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-    padding: 20,
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: "#F8F9FA", paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginVertical: 20,
+    color: "#1A1A1A",
   },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: {
-    backgroundColor: "#fff",
-    padding: 15,
+    backgroundColor: "#FFF",
     borderRadius: 12,
-    marginBottom: 15,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
     elevation: 2,
   },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  jobTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 12, fontWeight: "bold" },
-  offersRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  offersText: { marginLeft: 5, color: "#007AFF", fontWeight: "600" },
-  viewBidsButton: {
-    marginTop: 15,
-    backgroundColor: "#007AFF",
-    padding: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  viewBidsText: { color: "#fff", fontWeight: "bold" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    height: "80%",
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: { fontSize: 22, fontWeight: "bold" },
-  bidCard: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#E9ECEF",
-  },
-  bidHeader: {
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 8,
   },
-  workerName: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  workerOccupation: { fontSize: 13, color: "#007AFF", fontWeight: "600" },
-  bidPrice: { fontSize: 18, fontWeight: "bold", color: "#28A745" },
-  bidMessage: {
-    fontSize: 14,
-    color: "#666",
-    marginVertical: 10,
-    fontStyle: "italic",
+  jobTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+    marginRight: 8,
   },
-  bidFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 5,
-  },
-  etaText: { color: "#666", fontSize: 13 },
-  acceptButton: {
-    backgroundColor: "#28A745",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  jobDate: { fontSize: 13, color: "#888", marginBottom: 15 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText: { fontSize: 12, fontWeight: "600", color: "#555" },
+
+  // Botones
+  viewBidsButton: {
+    backgroundColor: "#F0F0F0",
+    padding: 12,
     borderRadius: 8,
+    alignItems: "center",
   },
-  acceptButtonText: { color: "#fff", fontWeight: "bold" },
+  viewBidsText: { color: "#007AFF", fontWeight: "600" },
   chatButton: {
-    flexDirection: "row",
     backgroundColor: "#007AFF",
     padding: 12,
-    borderRadius: 10,
-    marginTop: 10,
+    borderRadius: 8,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
   chatButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
+  rateButton: {
+    backgroundColor: "#FFC107",
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  rateButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
+
+  // Badge Finalizado
+  completedBadge: {
+    backgroundColor: "#E8F5E9",
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  completedBadgeText: { color: "#28A745", fontWeight: "bold", marginLeft: 8 },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 25,
+    alignItems: "center",
+  },
+  closeModal: { alignSelf: "flex-end" },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 10,
+  },
+  modalSubtitle: { fontSize: 16, color: "#666", marginVertical: 10 },
+  starsRow: { flexDirection: "row", marginVertical: 20 },
+  reviewInput: {
+    width: "100%",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 10,
+    padding: 15,
+    textAlignVertical: "top",
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  confirmButton: {
+    backgroundColor: "#28A745",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  confirmButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  emptyText: {
+    textAlign: "center",
+    color: "#888",
+    marginTop: 50,
+    fontSize: 16,
+  },
 });

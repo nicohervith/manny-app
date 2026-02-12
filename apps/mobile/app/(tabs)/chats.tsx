@@ -48,10 +48,11 @@ export default function ChatListScreen() {
           const otherParty =
             item.clientId === userId ? item.worker : item.client;
           const lastMsg = item.messages[0];
+          const isCompleted = item.status === "COMPLETED";
 
           return (
             <TouchableOpacity
-              style={styles.chatCard}
+              style={[styles.chatCard, isCompleted && styles.completedCard]}
               onPress={() =>
                 router.push({
                   pathname: "/chat/[jobId]",
@@ -59,18 +60,30 @@ export default function ChatListScreen() {
                 })
               }
             >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{otherParty.name[0]}</Text>
+              <View
+                style={[styles.avatar, isCompleted && styles.completedAvatar]}
+              >
+                <Text style={styles.avatarText}>{otherParty?.name[0]}</Text>
               </View>
 
               <View style={styles.chatInfo}>
-                <Text style={styles.jobTitle}>{item.title}</Text>
+                <View style={styles.titleRow}>
+                  <Text style={styles.jobTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {isCompleted && (
+                    <View style={styles.completedBadge}>
+                      <Text style={styles.completedBadgeText}>FINALIZADO</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.lastMessage} numberOfLines={1}>
+                  {isCompleted && "⚠️ Chat temporal: "}
                   {lastMsg ? lastMsg.content : "No hay mensajes aún"}
                 </Text>
               </View>
 
-              {unreadCount > 0 && (
+              {unreadCount > 0 && !isCompleted && (
                 <View style={styles.unreadBadge}>
                   <Text style={styles.unreadText}>{unreadCount}</Text>
                 </View>
@@ -91,13 +104,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  chatCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
   avatar: {
     width: 50,
     height: 50,
@@ -119,4 +125,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   unreadText: { color: "#fff", fontSize: 12, fontWeight: "bold" },
+  chatCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  completedCard: {
+    backgroundColor: "#F9F9F9", // Fondo sutilmente gris
+    opacity: 0.8,
+  },
+  completedAvatar: {
+    backgroundColor: "#94A3B8", // Avatar gris
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  completedBadge: {
+    backgroundColor: "#E2E8F0",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  completedBadgeText: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#64748B",
+  },
 });

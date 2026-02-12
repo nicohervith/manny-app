@@ -61,6 +61,7 @@ router.get("/client/:clientId", async (req, res) => {
         _count: {
           select: { bids: true },
         },
+        review: true,
         bids: {
           include: {
             worker: {
@@ -187,6 +188,23 @@ router.post("/accept-bid", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al aceptar la oferta" });
+  }
+});
+
+router.patch("/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; 
+
+  try {
+    const updatedJob = await prisma.job.update({
+      where: { id: parseInt(id) },
+      data: { status: status },
+    });
+
+    res.json({ message: "Estado actualizado con éxito", job: updatedJob });
+  } catch (error) {
+    console.error("Error al actualizar estado del trabajo:", error);
+    res.status(500).json({ error: "No se pudo actualizar el trabajo" });
   }
 });
 

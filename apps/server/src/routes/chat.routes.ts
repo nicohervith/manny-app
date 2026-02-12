@@ -45,16 +45,28 @@ router.get("/:jobId", async (req, res) => {
 });
 
 // apps/server/src/routes/chat.routes.ts
-
 router.get("/list/:userId", async (req, res) => {
   const { userId } = req.params;
   const id = parseInt(userId);
 
+  const expirationDate = new Date();
+  expirationDate.setHours(expirationDate.getHours() - 24);
+
   try {
     const chats = await prisma.job.findMany({
       where: {
-        OR: [{ clientId: id }, { workerId: id }],
-        status: "IN_PROGRESS",
+        AND: [
+          { OR: [{ clientId: id }, { workerId: id }] },
+          {
+            OR: [
+              { status: "IN_PROGRESS" },
+              {
+                status: "COMPLETED",
+                updatedAt: { gte: expirationDate },
+              },
+            ],
+          },
+        ],
       },
       include: {
         messages: {
@@ -74,9 +86,11 @@ router.get("/list/:userId", async (req, res) => {
         client: { select: { name: true } },
         worker: { select: { name: true } },
       },
+      orderBy: { updatedAt: "desc" },
     });
     res.json(chats);
   } catch (error) {
+    console.error(error); // Agregamos log para debug
     res.status(500).json({ error: "Error al obtener lista de chats" });
   }
 });

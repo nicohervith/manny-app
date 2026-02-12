@@ -87,27 +87,56 @@ router.get("/list", async (req, res) => {
   }
 });
 
+// apps/server/src/routes/worker.routes.ts
+
 router.get("/profile/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
-
     const profile = await prisma.workerProfile.findUnique({
-      where: { userId: parseInt(userId) },
+      where: { userId: parseInt(req.params.userId) },
       include: {
         user: {
-          select: { name: true, email: true },
+          select: {
+            name: true,
+            receivedReviews: {
+              include: {
+                reviewer: { select: { name: true } } // Para saber quién comentó
+              },
+              orderBy: { createdAt: 'desc' } // Más recientes primero
+            },
+          },
         },
       },
     });
 
-    if (!profile) {
-      return res.status(404).json({ error: "Perfil no encontrado" });
-    }
+    if (!profile) return res.status(404).json({ error: "No profile" });
 
-    res.json(profile);
+    const reviews = profile.user.receivedReviews;
+    const averageRating = reviews.length > 0
+        ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
+        : 0;
+
+    res.json({ 
+      ...profile, 
+      averageRating: averageRating.toFixed(1), 
+      totalReviews: reviews.length,
+      reviews: reviews // Enviamos la lista completa al front
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error de servidor" });
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PATCH /api/jobs/:id/complete-worker
+router.patch("/:id/complete-worker", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const job = await prisma.job.update({
+      where: { id: parseInt(id) },
+      data: { status: "COMPLETED" }, 
+    });
+    res.json(job);
+  } catch (error) {
+    res.status(500).json({ error: "No se pudo actualizar el estado" });
   }
 });
 
