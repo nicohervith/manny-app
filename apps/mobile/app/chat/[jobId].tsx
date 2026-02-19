@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser"; // IMPORTANTE
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,9 +19,8 @@ import {
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
 
-// Inicializamos el socket fuera del componente para evitar múltiples conexiones
 const socket = io(API_URL.replace("/api", ""), {
-  transports: ["websocket"], // Forzamos websocket para mejor rendimiento
+  transports: ["websocket"], 
 });
 
 export default function ChatScreen() {

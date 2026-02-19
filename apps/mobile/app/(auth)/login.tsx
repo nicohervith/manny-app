@@ -11,11 +11,13 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 import { useAuthStore } from "../../src/store/authStore";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -55,7 +57,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>FindJob</Text>
+      <Text style={styles.title}>MannyJobs</Text>
       <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
       <TextInput
@@ -67,13 +69,25 @@ export default function LoginScreen() {
         keyboardType="email-address"
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput} // Estilo ajustado para que no pise el icono
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword} // Si showPassword es false, se oculta
+        />
+        <TouchableOpacity
+          style={styles.eyeIcon}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Ionicons
+            name={showPassword ? "eye-off" : "eye"}
+            size={24}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[styles.button, loading && { opacity: 0.7 }]}
@@ -132,5 +146,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     fontSize: 14,
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F2F5", // O el color que uses en tus inputs
+    borderRadius: 10,
+    marginBottom: 15,
+    position: "relative",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    paddingRight: 50, // Espacio para que el texto no se meta debajo del ojo
+    fontSize: 16,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 15,
+    height: "100%",
+    justifyContent: "center",
   },
 });

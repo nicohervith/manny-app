@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { API_URL } from "../../src/constants/Config";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -15,10 +18,34 @@ export default function ProfileScreen() {
     });
   }, []);
 
+  const handleLinkMercadoPago = async () => {
+    try {
+      const userData = await SecureStore.getItemAsync("userData");
+      const user = JSON.parse(userData || "{}");
+
+      const response = await axios.get(
+        `${API_URL}/api/payments/auth/url/${user.id}`,
+      );
+
+      // IMPORTANTE: El segundo parámetro debe coincidir con tu app config (app.json)
+      const result = await WebBrowser.openAuthSessionAsync(
+        response.data.url,
+        "findjob://profile",
+      );
+
+      if (result.type === "success") {
+        // Aquí podrías recargar los datos del usuario para verificar si ya está conectado
+        alert("Proceso de vinculación finalizado.");
+      }
+    } catch (error) {
+      console.error("Error vinculando MP:", error);
+      alert("No se pudo iniciar la vinculación.");
+    }
+  };
+
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
-    // Volvemos al Login y reseteamos el historial
     router.replace("/(auth)/login");
   };
 
@@ -27,16 +54,32 @@ export default function ProfileScreen() {
       <Ionicons name="person-circle" size={100} color="#007AFF" />
       <Text style={styles.title}>Mi Cuenta</Text>
 
-      {/* Solo mostramos "Editar Perfil Profesional" si es WORKER */}
       {role === "WORKER" && (
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => router.push("/worker/complete-profile")}
-        >
-          <Ionicons name="briefcase-outline" size={20} color="#333" />
-          <Text style={styles.menuText}>Editar Perfil Profesional</Text>
-          <Ionicons name="chevron-forward" size={20} color="#CCC" />
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => router.push("/worker/complete-profile")}
+          >
+            <Ionicons name="briefcase-outline" size={20} color="#333" />
+            <Text style={styles.menuText}>Editar Perfil Profesional</Text>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          {/* BOTÓN DE MERCADO PAGO AÑADIDO AQUÍ */}
+          <TouchableOpacity
+            style={[
+              styles.menuButton,
+              { borderLeftWidth: 4, borderLeftColor: "#00B1EA" },
+            ]}
+            onPress={handleLinkMercadoPago}
+          >
+            <Ionicons name="wallet-outline" size={20} color="#00B1EA" />
+            <Text style={[styles.menuText, { color: "#00B1EA" }]}>
+              Vincular Mercado Pago
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
+        </>
       )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

@@ -58,7 +58,7 @@ router.post("/create-preference", async (req, res) => {
         // ------------------------------------------
 
         notification_url:
-          "https://8b6d-181-116-89-120.ngrok-free.app/api/payments/webhook",
+          "https://2abb-181-116-89-120.ngrok-free.app/api/payments/webhook",
       },
     });
 
@@ -167,7 +167,7 @@ router.get("/oauth/callback", async (req, res) => {
 
     const { access_token, refresh_token, user_id } = response.data;
 
-    // 2. Guardamos en la DB
+    // 2. Guardamos en la DB (Asegúrate de limpiar antes el registro si vas a re-vincular)
     await prisma.workerProfile.update({
       where: { userId: parseInt(state as string) },
       data: {
