@@ -1,26 +1,29 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  Modal,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import axios from "axios";
-import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { API_URL } from "../../src/constants/Config";
+
 export default function MyJobsScreen() {
   const router = useRouter();
-  const [myJobs, setMyJobs] = useState([]);
+  const [myJobs, setMyJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [payingId, setPayingId] = useState<number | null>(null);
 
   // Estados para el Modal de Reseña
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
@@ -51,6 +54,40 @@ export default function MyJobsScreen() {
     fetchMyJobs();
   };
 
+  // --- LÓGICA DE PAGO INTEGRADA ---
+  const handlePayment = async (job: any) => {
+    if (!job.budget || !job.workerId) {
+      Alert.alert("Error", "Información de pago incompleta.");
+      return;
+    }
+
+    setPayingId(job.id);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/payments/create-preference`,
+        {
+          jobId: job.id,
+          price: job.budget,
+          workerId: job.workerId,
+        },
+      );
+
+      const { id } = response.data;
+      const checkoutUrl = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${id}`;
+
+      // Abrimos el navegador para el pago
+      await WebBrowser.openBrowserAsync(checkoutUrl);
+
+      // Opcional: Refrescar al volver para ver si el webhook ya impactó
+      fetchMyJobs();
+    } catch (error) {
+      console.error("Error al iniciar pago", error);
+      Alert.alert("Error", "No se pudo conectar con Mercado Pago.");
+    } finally {
+      setPayingId(null);
+    }
+  };
+
   const submitReview = async () => {
     if (!comment.trim()) {
       Alert.alert("Atención", "Por favor deja un breve comentario.");
@@ -68,22 +105,14 @@ export default function MyJobsScreen() {
 
       Alert.alert("¡Éxito!", "Tu calificación ha sido enviada.");
       setRatingModalVisible(false);
-      setComment(""); // Limpiar comentario
-      setRating(5); // Reset estrellas
-      fetchMyJobs(); // Refrescar para ocultar el botón de calificar
+      setComment("");
+      setRating(5);
+      fetchMyJobs();
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "No se pudo enviar la reseña.");
     }
   };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -95,16 +124,12 @@ export default function MyJobsScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>
-            No has publicado ningún trabajo aún.
-          </Text>
-        }
         renderItem={({ item }) => {
           const isPending = item.status === "PENDING";
           const isInProgress = item.status === "IN_PROGRESS";
-          const isCompleted = item.status === "COMPLETED";
-          const hasBeenRated = !!item.review; // Si existe el objeto review
+          const isCompleted = item.status === "COMPLETED"; // El trabajador marcó como terminado
+          const isPaid = item.status === "PAID"; // Webhook confirmó el pago
+          const hasBeenRated = !!item.review;
 
           return (
             <View style={styles.card}>
@@ -119,61 +144,78 @@ export default function MyJobsScreen() {
                 Publicado el: {new Date(item.createdAt).toLocaleDateString()}
               </Text>
 
-              {/* LÓGICA DE BOTONES SEGÚN ESTADO */}
+              <View style={styles.buttonContainer}>
+                {/* SIEMPRE PERMITIR CHAT SI NO ESTÁ PAGADO TODAVÍA */}
+                {(isInProgress || isCompleted) && (
+                  <TouchableOpacity
+                    style={styles.chatButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/chat/[jobId]",
+                        params: { jobId: item.id },
+                      })
+                    }
+                  >
+                    <Ionicons name="chatbubbles" size={18} color="#fff" />
+                    <Text style={styles.buttonTextSmall}>Chat</Text>
+                  </TouchableOpacity>
+                )}
 
-              {isPending && (
-                <TouchableOpacity
-                  style={styles.viewBidsButton}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/client/job-bids/[id]",
-                      params: { id: item.id.toString() },
-                    })
-                  }
-                >
-                  <Text style={styles.viewBidsText}>
-                    {item._count?.bids > 0
-                      ? `Ver ${item._count.bids} Postulantes`
-                      : "Sin postulantes aún"}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                {/* BOTÓN PAGAR: Solo si está COMPLETED */}
+                {isCompleted && (
+                  <TouchableOpacity
+                    style={styles.payButton}
+                    onPress={() => handlePayment(item)}
+                    disabled={payingId === item.id}
+                  >
+                    {payingId === item.id ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="card" size={18} color="#fff" />
+                        <Text style={styles.buttonTextSmall}>
+                          Pagar ${item.budget}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
 
-              {isInProgress && (
-                <TouchableOpacity
-                  style={styles.chatButton}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/chat/[jobId]",
-                      params: { jobId: item.id },
-                    })
-                  }
-                >
-                  <Ionicons name="chatbubbles" size={20} color="#fff" />
-                  <Text style={styles.chatButtonText}>
-                    Hablar con el profesional
-                  </Text>
-                </TouchableOpacity>
-              )}
+                {/* BOTÓN CALIFICAR: Solo si está PAID y no tiene reseña */}
+                {isPaid && !hasBeenRated && (
+                  <TouchableOpacity
+                    style={styles.rateButton}
+                    onPress={() => {
+                      setSelectedJob(item);
+                      setRatingModalVisible(true);
+                    }}
+                  >
+                    <Ionicons name="star" size={18} color="#fff" />
+                    <Text style={styles.buttonTextSmall}>Calificar</Text>
+                  </TouchableOpacity>
+                )}
 
-              {isCompleted && !hasBeenRated && (
-                <TouchableOpacity
-                  style={styles.rateButton}
-                  onPress={() => {
-                    setSelectedJob(item);
-                    setRatingModalVisible(true);
-                  }}
-                >
-                  <Ionicons name="star" size={20} color="#fff" />
-                  <Text style={styles.rateButtonText}>Calificar Servicio</Text>
-                </TouchableOpacity>
-              )}
+                {/* VER POSTULANTES: Solo si está PENDING */}
+                {isPending && (
+                  <TouchableOpacity
+                    style={styles.viewBidsButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/client/job-bids/[id]",
+                        params: { id: item.id.toString() },
+                      })
+                    }
+                  >
+                    <Text style={styles.viewBidsText}>Ver Postulantes</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
-              {isCompleted && hasBeenRated && (
+              {isPaid && hasBeenRated && (
                 <View style={styles.completedBadge}>
                   <Ionicons
                     name="checkmark-done-circle"
-                    size={20}
+                    size={18}
                     color="#28A745"
                   />
                   <Text style={styles.completedBadgeText}>
@@ -236,7 +278,6 @@ export default function MyJobsScreen() {
   );
 }
 
-// Helper para colores de badges
 const getStatusStyle = (status: string) => {
   switch (status) {
     case "PENDING":
@@ -244,86 +285,93 @@ const getStatusStyle = (status: string) => {
     case "IN_PROGRESS":
       return { backgroundColor: "#E3F2FD" };
     case "COMPLETED":
-      return { backgroundColor: "#E8F5E9" };
+      return { backgroundColor: "#FFFBEB" }; // Amarillo suave para "esperando pago"
+    case "PAID":
+      return { backgroundColor: "#E8F5E9" }; // Verde para pagado
     default:
       return { backgroundColor: "#F5F5F5" };
   }
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA", paddingHorizontal: 16 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1, backgroundColor: "#F8F9FA", padding: 15 },
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    marginVertical: 20,
-    color: "#1A1A1A",
+    marginBottom: 20,
+    paddingTop: 40,
   },
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  jobTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    flex: 1,
-    marginRight: 8,
-  },
-  jobDate: { fontSize: 13, color: "#888", marginBottom: 15 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusText: { fontSize: 12, fontWeight: "600", color: "#555" },
-
-  // Botones
-  viewBidsButton: {
-    backgroundColor: "#F0F0F0",
-    padding: 12,
-    borderRadius: 8,
     alignItems: "center",
   },
-  viewBidsText: { color: "#007AFF", fontWeight: "600" },
+  jobTitle: { fontSize: 18, fontWeight: "bold", flex: 1 },
+  jobDate: { fontSize: 12, color: "#6c757d", marginVertical: 8 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusText: { fontSize: 10, fontWeight: "bold" },
+  buttonContainer: { flexDirection: "row", gap: 10, marginTop: 10 },
   chatButton: {
     backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 8,
     flexDirection: "row",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  chatButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
+  payButton: {
+    backgroundColor: "#28A745",
+    flexDirection: "row",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   rateButton: {
     backgroundColor: "#FFC107",
-    padding: 12,
-    borderRadius: 8,
     flexDirection: "row",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  rateButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
-
-  // Badge Finalizado
+  buttonTextSmall: {
+    color: "#fff",
+    fontWeight: "bold",
+    marginLeft: 5,
+    fontSize: 13,
+  },
+  viewBidsButton: {
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    padding: 10,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  viewBidsText: { color: "#007AFF", fontWeight: "bold" },
   completedBadge: {
-    backgroundColor: "#E8F5E9",
-    padding: 12,
-    borderRadius: 8,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
+    marginTop: 10,
+    justifyContent: "center",
   },
-  completedBadgeText: { color: "#28A745", fontWeight: "bold", marginLeft: 8 },
-
+  completedBadgeText: {
+    color: "#28A745",
+    fontWeight: "bold",
+    marginLeft: 5,
+    fontSize: 13,
+  },
   // Modal
   modalOverlay: {
     flex: 1,

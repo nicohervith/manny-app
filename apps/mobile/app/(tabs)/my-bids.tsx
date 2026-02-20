@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FA",
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 20,
   },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: {

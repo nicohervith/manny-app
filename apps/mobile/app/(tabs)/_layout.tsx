@@ -165,6 +165,17 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="verify-workers"
+        options={{
+          title: "Validar",
+          href: role === "ADMIN" ? "/verify-workers" : null, // Oculta el tab si no es ADMIN
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="shield-checkmark" size={24} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

@@ -7,12 +7,27 @@ const router = Router();
 
 // apps/server/src/routes/worker.routes.ts
 
+const uploadFields = upload.fields([
+  { name: "dniFront", maxCount: 1 },
+  { name: "dniBack", maxCount: 1 },
+  { name: "selfie", maxCount: 1 },
+]);
+
 router.post(
   "/complete-profile",
-  upload.single("dniPhoto"),
+  (req, res, next) => {
+    uploadFields(req, res, (err) => {
+      if (err) {
+        console.error("❌ Error de Multer/Cloudinary:", err);
+        return res
+          .status(400)
+          .json({ error: "Error al subir archivos", details: err.message });
+      }
+      next();
+    });
+  },
   async (req, res) => {
     try {
-      // 1. Desestructuramos usando 'hourlyRate' (como viene del frontend)
       const {
         userId,
         occupation,
@@ -23,11 +38,18 @@ router.post(
         hourlyRate,
       } = req.body;
 
-      if (!userId) {
+      if (!userId)
         return res.status(400).json({ error: "El userId es obligatorio" });
-      }
 
-      const fotoDniUrl = req.file ? req.file.path : null;
+      // Verificación de seguridad para req.files
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
+
+      const dniFrontUrl = files?.["dniFront"]?.[0]?.path || null;
+      const dniBackUrl = files?.["dniBack"]?.[0]?.path || null;
+      const selfieUrl = files?.["selfie"]?.[0]?.path || null;
+
       const profile = await prisma.workerProfile.upsert({
         where: { userId: parseInt(userId) },
         update: {
@@ -36,8 +58,11 @@ router.post(
           dni,
           latitude: latitude ? parseFloat(latitude) : null,
           longitude: longitude ? parseFloat(longitude) : null,
-          dniPhoto: fotoDniUrl || undefined, // Solo actualiza si hay foto nueva
           hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+          ...(dniFrontUrl && { dniFront: dniFrontUrl }),
+          ...(dniBackUrl && { dniBack: dniBackUrl }),
+          ...(selfieUrl && { selfie: selfieUrl }),
+          verification: "PENDING",
         },
         create: {
           userId: parseInt(userId),
@@ -46,23 +71,25 @@ router.post(
           dni,
           latitude: latitude ? parseFloat(latitude) : null,
           longitude: longitude ? parseFloat(longitude) : null,
-          dniPhoto: fotoDniUrl,
           hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+          dniFront: dniFrontUrl,
+          dniBack: dniBackUrl,
+          selfie: selfieUrl,
+          verification: "PENDING",
         },
       });
 
-      // 3. Asegurar que el rol cambie a WORKER
       await prisma.user.update({
         where: { id: parseInt(userId) },
         data: { role: "WORKER" },
       });
 
-      res.json({ message: "Perfil completado con éxito", profile });
-    } catch (error) {
-      console.error("Error en complete-profile:", error);
+      res.json({ message: "Perfil enviado a revisión", profile });
+    } catch (error: any) {
+      console.error("❌ Error en Prisma:", error);
       res
         .status(500)
-        .json({ error: "No se pudo procesar el perfil profesional" });
+        .json({ error: "Error interno del servidor", details: error.message });
     }
   },
 );
@@ -99,9 +126,9 @@ router.get("/profile/:userId", async (req, res) => {
             name: true,
             receivedReviews: {
               include: {
-                reviewer: { select: { name: true } } // Para saber quién comentó
+                reviewer: { select: { name: true } }, // Para saber quién comentó
               },
-              orderBy: { createdAt: 'desc' } // Más recientes primero
+              orderBy: { createdAt: "desc" }, // Más recientes primero
             },
           },
         },
@@ -111,15 +138,16 @@ router.get("/profile/:userId", async (req, res) => {
     if (!profile) return res.status(404).json({ error: "No profile" });
 
     const reviews = profile.user.receivedReviews;
-    const averageRating = reviews.length > 0
+    const averageRating =
+      reviews.length > 0
         ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
         : 0;
 
-    res.json({ 
-      ...profile, 
-      averageRating: averageRating.toFixed(1), 
+    res.json({
+      ...profile,
+      averageRating: averageRating.toFixed(1),
       totalReviews: reviews.length,
-      reviews: reviews // Enviamos la lista completa al front
+      reviews: reviews, // Enviamos la lista completa al front
     });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
@@ -132,12 +160,39 @@ router.patch("/:id/complete-worker", async (req, res) => {
   try {
     const job = await prisma.job.update({
       where: { id: parseInt(id) },
-      data: { status: "COMPLETED" }, 
+      data: { status: "COMPLETED" },
     });
     res.json(job);
   } catch (error) {
     res.status(500).json({ error: "No se pudo actualizar el estado" });
   }
+});
+
+// apps/server/src/routes/admin.routes.ts o worker.routes.ts
+
+router.patch("/verify-worker/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { status } = req.body; // "VERIFIED" o "REJECTED"
+
+  try {
+    const updatedProfile = await prisma.workerProfile.update({
+      where: { userId: parseInt(userId) },
+      data: { verification: status },
+    });
+
+    // Opcional: Si es RECHAZADO, podrías enviar una notificación push al usuario
+    res.json({ message: `Estado actualizado a ${status}`, updatedProfile });
+  } catch (error) {
+    res.status(500).json({ error: "Error al actualizar la verificación" });
+  }
+});
+
+router.get("/status/:userId", async (req, res) => {
+  const profile = await prisma.workerProfile.findUnique({
+    where: { userId: parseInt(req.params.userId) },
+    select: { verification: true }
+  });
+  res.json({ verification: profile?.verification || "NONE" });
 });
 
 export default router;

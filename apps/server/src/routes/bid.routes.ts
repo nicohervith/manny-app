@@ -3,10 +3,24 @@ import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
-// Enviar una postulación
 router.post("/apply", async (req, res) => {
   try {
     const { jobId, workerId, message, price, estimatedMin } = req.body;
+
+    // --- BLOQUE DE SEGURIDAD ---
+    // 1. Buscamos el perfil del trabajador directamente en la DB
+    const workerProfile = await prisma.workerProfile.findUnique({
+      where: { userId: parseInt(workerId) },
+    });
+
+    // 2. Si no existe o no está verificado, bloqueamos la operación
+    if (!workerProfile || workerProfile.verification !== "VERIFIED") {
+      return res.status(403).json({
+        error:
+          "Acceso denegado. Tu cuenta debe estar verificada por un administrador para postularte.",
+      });
+    }
+    // ---------------------------
 
     const existingBid = await prisma.bid.findFirst({
       where: {
@@ -42,7 +56,7 @@ router.get("/worker/:workerId", async (req, res) => {
       include: {
         job: {
           include: {
-            client: { 
+            client: {
               select: {
                 name: true,
               },
@@ -69,12 +83,12 @@ router.get("/job/:jobId", async (req, res) => {
       where: { jobId: parseInt(jobId) },
       include: {
         worker: {
-          select: { 
-            name: true, 
+          select: {
+            name: true,
             id: true,
             receivedReviews: {
-              select: { rating: true }
-            }
+              select: { rating: true },
+            },
           },
         },
       },
@@ -82,20 +96,23 @@ router.get("/job/:jobId", async (req, res) => {
     });
 
     // Mapeamos los resultados para calcular el promedio y total de reseñas antes de enviar
-    const formattedBids = bids.map(bid => {
+    const formattedBids = bids.map((bid) => {
       const reviews = bid.worker.receivedReviews;
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0 
-        ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews).toFixed(1)
-        : "0.0";
+      const averageRating =
+        totalReviews > 0
+          ? (
+              reviews.reduce((acc, curr) => acc + curr.rating, 0) / totalReviews
+            ).toFixed(1)
+          : "0.0";
 
       return {
         ...bid,
         worker: {
           ...bid.worker,
           averageRating,
-          totalReviews
-        }
+          totalReviews,
+        },
       };
     });
 

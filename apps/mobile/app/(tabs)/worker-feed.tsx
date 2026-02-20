@@ -1,23 +1,27 @@
+import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import axios from "axios";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import { JobCard } from "../../src/components/jobCard";
 import { API_URL } from "../../src/constants/Config";
+import { ApplyBidModal } from "../worker/ApplyBidModal";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function WorkerFeedScreen() {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,15 +35,15 @@ export default function WorkerFeedScreen() {
     message: "",
     tiempo: "",
   });
-
-  // Función para calcular distancia (Haversine)
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const router = useRouter();
   const calculateDistance = (
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number,
   ) => {
-    const R = 6371; // Radio de la Tierra en km
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -77,28 +81,50 @@ export default function WorkerFeedScreen() {
     }
   };
 
-  const handleApply = async () => {
-    try {
-      const userData = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userData || "{}");
+const handlePressApply = async (job: any) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/worker/status/${user.id}`);
+    const { verification } = res.data;
 
-      await axios.post(`${API_URL}/api/bids/apply`, {
-        jobId: selectedJob.id,
-        workerId: user.id,
-        message: bidData.message,
-        price: bidData.price,
-        estimatedMin: bidData.tiempo,
-      });
-
-      Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada al cliente.");
-      setModalVisible(false);
-      setBidData({ price: "", message: "", tiempo: "" });
-    } catch (error) {
-      Alert.alert("Error", "No se pudo enviar la propuesta.");
+    if (verification !== "VERIFIED") {
+      Alert.alert(
+        "Verificación Requerida",
+        `Tu cuenta está en estado: ${verification}`,
+        [
+          { text: "Cerrar" },
+          {
+            text: "Ver mi Perfil",
+            onPress: () => router.push("/worker/complete-profile"),
+          },
+        ],
+      );
+      return;
     }
-  };
 
-  // --- Lógica de filtrado ---
+    setSelectedJob(job);
+    setModalVisible(true);
+  } catch (e) {
+    Alert.alert("Error", "No pudimos validar tu perfil.");
+  }
+};
+
+const handleApplyAction = async (data: any) => {
+  try {
+    await axios.post(`${API_URL}/api/bids/apply`, {
+      jobId: selectedJob.id,
+      workerId: user.id,
+      message: data.message,
+      price: data.price,
+      estimatedMin: data.tiempo,
+    });
+
+    Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada.");
+    setModalVisible(false);
+  } catch (error) {
+    Alert.alert("Error", "No se pudo enviar la propuesta.");
+  }
+};
+
   const filteredJobs = jobs.filter((item) => {
     if (!location || !item.latitude || !item.longitude) return true;
 
@@ -109,7 +135,7 @@ export default function WorkerFeedScreen() {
       item.longitude,
     );
 
-    return distance <= radius; // Solo trabajos dentro del radio
+    return distance <= radius;
   });
 
   useEffect(() => {
@@ -128,7 +154,30 @@ export default function WorkerFeedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Available Jobs</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Text style={styles.title}>Available Jobs</Text>
+
+          {/* BOTÓN PARA CAMBIAR ENTRE LISTA Y MAPA */}
+          <TouchableOpacity
+            style={styles.viewToggleButton}
+            onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}
+          >
+            <Ionicons
+              name={viewMode === "list" ? "map-outline" : "list-outline"}
+              size={20}
+              color="#007AFF"
+            />
+            <Text style={styles.viewToggleText}>
+              {viewMode === "list" ? "Ver mapa" : "Ver lista"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Contenedor del Filtro */}
         <View style={styles.filterContainer}>
@@ -152,91 +201,113 @@ export default function WorkerFeedScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={filteredJobs} // Usamos la lista filtrada
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => {
-          const distance =
-            location && item.latitude && item.longitude
-              ? calculateDistance(
-                  location.latitude,
-                  location.longitude,
-                  item.latitude,
-                  item.longitude,
-                )
-              : null;
+      {viewMode === "list" ? (
+        <FlatList
+          data={filteredJobs} // Usamos la lista filtrada
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            const distance =
+              location && item.latitude && item.longitude
+                ? calculateDistance(
+                    location.latitude,
+                    location.longitude,
+                    item.latitude,
+                    item.longitude,
+                  )
+                : null;
 
-          return (
-            <JobCard
-              item={item}
-              distance={distance}
-              onApply={(job) => {
-                setSelectedJob(job);
-                setModalVisible(true);
-              }}
-            />
-          );
-        }}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No pending jobs in your area.</Text>
-        }
-      />
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Enviar Propuesta</Text>
-            <Text style={styles.modalSubtitle}>{selectedJob?.title}</Text>
+            return (
+              <JobCard
+                item={item}
+                distance={distance}
+                onApply={(job) => handlePressApply(job)}
+              />
+            );
+          }}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No pending jobs in your area.</Text>
+          }
+        />
+      ) : (
+        /* VISTA DE MAPA */
+        <View style={{ flex: 1 }}>
+          <MapView
+            style={{ flex: 1 }}
+            initialRegion={{
+              latitude: location?.latitude || -34.6037, // Default a Buenos Aires o tu ciudad
+              longitude: location?.longitude || -58.3816,
+              latitudeDelta: radius * 0.02, // Zoom dinámico según el radio
+              longitudeDelta: radius * 0.02,
+            }}
+          >
+            {/* Círculo que representa el radio de búsqueda */}
+            {location && (
+              <Circle
+                center={location}
+                radius={radius * 1000}
+                fillColor="rgba(0, 122, 255, 0.1)"
+                strokeColor="rgba(0, 122, 255, 0.3)"
+                zIndex={0} // Forzamos profundidad
+              />
+            )}
 
-            <Text style={styles.label}>Tu Precio ($)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Ej: 5000"
-              keyboardType="numeric"
-              onChangeText={(text) => setBidData({ ...bidData, price: text })}
-            />
+            {/* Marcador de la posición del trabajador */}
+            {location && (
+              <Marker coordinate={location} title="Tu ubicación" zIndex={1} />
+            )}
 
-            <Text style={styles.label}>Tiempo estimado de llegada (min)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Ej: 30"
-              keyboardType="numeric"
-              onChangeText={(text) => setBidData({ ...bidData, tiempo: text })}
-            />
-
-            <Text style={styles.label}>Mensaje al cliente</Text>
-            <TextInput
-              style={[styles.modalInput, { height: 80 }]}
-              placeholder="Cuéntale por qué eres el indicado..."
-              multiline
-              onChangeText={(text) => setBidData({ ...bidData, message: text })}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
+            {/* Marcadores de los trabajos filtrados */}
+            {filteredJobs.map((job) => (
+              <Marker
+                key={job.id}
+                coordinate={{
+                  latitude: job.latitude,
+                  longitude: job.longitude,
+                }}
+                zIndex={10}
+                onCalloutPress={() => {
+                  handlePressApply(job);
+                }}
               >
-                <Text style={{ color: "#666" }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleApply}
-              >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                  Enviar Oferta
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                <View style={styles.customMarker}>
+                  <Ionicons name="briefcase" size={20} color="#fff" />
+                </View>
+
+                {/* tooltip={true} indica que tú defines todo el diseño del globo */}
+                <Callout tooltip={true}>
+                  <View style={styles.calloutContainer}>
+                    <View style={styles.calloutContent}>
+                      <Text style={styles.calloutTitle}>{job.title}</Text>
+                      <Text style={styles.calloutPrice}>${job.budget}</Text>
+
+                      <View style={styles.fakeButton}>
+                        <Text style={styles.calloutButtonText}>
+                          TOCAR PARA POSTULARSE
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.calloutArrow} />
+                  </View>
+                </Callout>
+              </Marker>
+            ))}
+          </MapView>
         </View>
-      </Modal>
+      )}
+      {/* MODAL MODULARIZADO */}
+      <ApplyBidModal
+        visible={modalVisible}
+        jobTitle={selectedJob?.title}
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleApplyAction}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F4F7" },
-  header: { padding: 20, paddingTop: 60, backgroundColor: "#fff" },
+  header: { padding: 20, paddingTop: 20, backgroundColor: "#fff" },
   title: { fontSize: 26, fontWeight: "bold", color: "#1A1A1A" },
   subtitle: { fontSize: 14, color: "#666", marginTop: 4 },
   jobCard: {
@@ -289,24 +360,6 @@ const styles = StyleSheet.create({
   },
   applyButtonText: { color: "#fff", fontWeight: "bold" },
   emptyText: { textAlign: "center", marginTop: 50, color: "#999" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: { backgroundColor: "#fff", borderRadius: 20, padding: 25 },
-  modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
-  modalSubtitle: { color: "#007AFF", marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: "bold", marginTop: 10, marginBottom: 5 },
-  modalInput: { backgroundColor: "#F0F2F5", borderRadius: 10, padding: 12 },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 25,
-  },
-  cancelButton: { padding: 15, marginRight: 10 },
-  confirmButton: { backgroundColor: "#007AFF", padding: 15, borderRadius: 10 },
   filterContainer: {
     marginTop: 15,
     padding: 15,
@@ -337,4 +390,88 @@ const styles = StyleSheet.create({
     marginTop: 50,
     paddingHorizontal: 40,
   },
+  viewToggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E5F1FF",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  viewToggleText: {
+    color: "#007AFF",
+    marginLeft: 6,
+    fontWeight: "600",
+  },
+  customMarker: {
+    backgroundColor: "#007AFF",
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#fff",
+    // Sombra para iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    // Sombra para Android
+    elevation: 5,
+  },
+  fakeButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  calloutContainer: {
+    alignItems: "center",
+    width: 200, // Un poco más ancho para facilitar el toque
+    backgroundColor: "transparent",
+  },
+  calloutContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    // Quita sombras pesadas si ves que el rendimiento baja en el mapa
+  },
+  calloutTitle: {
+    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  calloutCategory: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 5,
+  },
+  calloutPrice: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#28a745", // Verde para el precio
+    marginBottom: 8,
+  },
+  calloutButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 4,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  calloutButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  calloutArrow: {
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderTopColor: "#fff",
+    borderWidth: 10,
+    alignSelf: "center",
+    marginTop: -1, // Para que conecte con el globo
+  },
+  calloutFooter: {},
 });

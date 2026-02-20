@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -11,14 +13,17 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 import { useAuthStore } from "../../src/store/authStore";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const { setUser } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -28,26 +33,30 @@ export default function LoginScreen() {
         password,
       });
 
-      // Dentro de handleLogin en login.tsx
       const { token, user } = response.data;
+
+      if (!token) {
+        Alert.alert("Error", "Problema de autenticación en el servidor.");
+        return;
+      }
       await SecureStore.setItemAsync("userToken", token);
-      /*  await SecureStore.setItemAsync("userData", JSON.stringify(user)); */
-      await SecureStore.setItemAsync(
-        "userData",
-        JSON.stringify(response.data.user),
-      );
-      // Dentro de handleLogin en login.tsx
-      if (user.role === "WORKER" && !user.profile) {
+      await SecureStore.setItemAsync("userData", JSON.stringify(user));
+      setUser(user);
+
+      console.log("Login exitoso, usuario seteado en Contexto");
+      if (user.role === "ADMIN") {
+        router.replace("/(tabs)/verify-workers");
+      } else if (user.role === "WORKER" && !user.profile) {
         router.replace("/worker/complete-profile");
-      } else if (user.role === "WORKER") {
-        // Ir directamente al feed de trabajos
-        router.replace("/(tabs)/worker-feed");
       } else {
-        // Clientes van a la búsqueda de profesionales
         router.replace("/(tabs)");
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || "Error al iniciar sesión");
+      console.error("Error en login:", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Error al iniciar sesión",
+      );
     } finally {
       setLoading(false);
     }
@@ -55,7 +64,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>FindJob</Text>
+      <Text style={styles.title}>MannyJobs</Text>
       <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
       <TextInput
@@ -67,13 +76,25 @@ export default function LoginScreen() {
         keyboardType="email-address"
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput} // Estilo ajustado para que no pise el icono
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword} // Si showPassword es false, se oculta
+        />
+        <TouchableOpacity
+          style={styles.eyeIcon}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Ionicons
+            name={showPassword ? "eye-off" : "eye"}
+            size={24}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[styles.button, loading && { opacity: 0.7 }]}
@@ -132,5 +153,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     fontSize: 14,
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F2F5", // O el color que uses en tus inputs
+    borderRadius: 10,
+    marginBottom: 15,
+    position: "relative",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    paddingRight: 50, // Espacio para que el texto no se meta debajo del ojo
+    fontSize: 16,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 15,
+    height: "100%",
+    justifyContent: "center",
   },
 });
