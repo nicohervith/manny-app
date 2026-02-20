@@ -1,15 +1,15 @@
-import { Tabs } from "expo-router";
-import React from "react";
+import { Stack } from "expo-router";
+import Toast from "react-native-toast-message";
+import { AuthProvider } from "../src/context/AuthContext"; 
 
-export default function TabLayout() {
+export default function RootLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Inicio",
-        }}
-      />
-    </Tabs>
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <Toast />
+    </AuthProvider>
   );
 }

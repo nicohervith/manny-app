@@ -1,21 +1,36 @@
+import axios from "axios";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
   ActivityIndicator,
+  FlatList,
+  Image,
   RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import axios from "axios";
 import { API_URL } from "../../src/constants/Config";
 
 export default function ClientHomeScreen() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    const checkRedirect = async () => {
+      const userData = await SecureStore.getItemAsync("userData");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role === "WORKER") {
+          router.replace("/worker-feed");
+        }
+      }
+    };
+    checkRedirect();
+  }, []);
 
   const fetchWorkers = async () => {
     try {
@@ -74,23 +89,26 @@ export default function ClientHomeScreen() {
           return (
             <TouchableOpacity style={styles.workerCard} activeOpacity={0.7}>
               <View style={styles.workerInfo}>
-                <Text style={styles.workerName}>{item.user.nombre}</Text>
+                <Text style={styles.workerName}>{item.user.name}</Text>
                 <Text style={styles.workerOficio}>
-                  {item.oficio || "General Service"}
+                  {item.occupation || "General Service"}
                 </Text>
                 <Text style={styles.workerDesc} numberOfLines={2}>
-                  {item.descripcion || "No description provided."}
+                  {item.description || "No description provided."}
                 </Text>
-                {item.tarifaHora && (
+                {item.hourlyRate && (
                   <Text style={styles.priceText}>
-                    Price: ${item.tarifaHora}/hr
+                    Price: ${item.hourlyRate}/hr
                   </Text>
                 )}
               </View>
 
               <View style={styles.imageContainer}>
-                {item.fotoDni ? (
-                  <Image source={{ uri: item.fotoDni }} style={styles.avatar} />
+                {item.dniPhoto ? (
+                  <Image
+                    source={{ uri: item.dniPhoto }}
+                    style={styles.avatar}
+                  />
                 ) : (
                   <View style={[styles.avatar, styles.placeholderAvatar]}>
                     <Text style={styles.placeholderText}>No Pic</Text>

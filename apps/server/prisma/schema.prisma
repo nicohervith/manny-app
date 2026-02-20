@@ -1,5 +1,3 @@
-// apps/server/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,67 +7,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. Usuarios del sistema
 model User {
   id        Int      @id @default(autoincrement())
-  nombre    String
+  name      String
   email     String   @unique
   password  String
+  avatar    String?  // <--- AGREGAR ESTO (URL de la imagen)
+  phone     String?
   role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
 
-  // Relación 1:1 con el perfil de trabajador
-  perfil    WorkerProfile?
+  profile      WorkerProfile?
+  jobsAsClient Job[]          @relation("ClientJobs")
+  jobsAsWorker Job[]          @relation("WorkerJobs")
+  bids         Bid[]          @relation("WorkerBids")
+  sentMessages Message[]      @relation("SentMessages")
 
-  // Relaciones con los trabajos (Jobs)
-  trabajosComoCliente    Job[] @relation("ClienteJobs")
-  trabajosComoTrabajador Job[] @relation("TrabajadorJobs")
+  // CAMPOS AÑADIDOS PARA LAS REVIEWS:
+  sentReviews     Review[] @relation("SentReviews")
+  receivedReviews Review[] @relation("ReceivedReviews")
+
+  pushToken String?
 }
 
-// 2. Perfil detallado para quienes son TRABAJADOR
-model WorkerProfile {
-  id          Int      @id @default(autoincrement())
-  oficio      String   // Ej: Electricista, Plomero
-  descripcion String   @db.Text
-  dni         String   @unique
-  fotoDni     String?  // URL de Cloudinary
-  tarifaHora  Float?
-  
-  // Relación con User
-  userId      Int      @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// 3. Tabla de trabajos o servicios contratados
 model Job {
-  id            Int             @id @default(autoincrement())
-  titulo        String
-  descripcion   String          @db.Text
-  estado        JobStatus       @default(PENDIENTE)
-  presupuesto   Float?
-  createdAt     DateTime        @default(now())
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String    @db.Text
+  status      JobStatus @default(PENDING)
+  budget       Float?     
+  images       String?
+  latitude    Float?
+  longitude   Float?
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  clientId    Int
+  client      User      @relation("ClientJobs", fields: [clientId], references: [id])
 
-  clienteId     Int
-  cliente       User            @relation("ClienteJobs", fields: [clienteId], references: [id])
+  workerId    Int?
+  worker      User?           @relation("WorkerJobs", fields: [workerId], references: [id])
+  transaction Transaction?
+  adjustments JobAdjustment[]
+  bids        Bid[]
+  messages    Message[]
 
-  // Cambia Int a Int? y agrega el signo ? a la relación
-  trabajadorId  Int?            // <--- Fíjate en el signo ?
-  trabajador    User?           @relation("TrabajadorJobs", fields: [trabajadorId], references: [id])
-
-  ajustes       JobAdjustment[]
+  // CAMPO AÑADIDO PARA LA REVIEW:
+  review Review? // Un trabajo puede tener una reseña
 }
 
-// 4. Ajustes o histórico de cambios en un trabajo
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int // 1 a 5
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+
+  jobId Int @unique
+  job   Job @relation(fields: [jobId], references: [id])
+
+  reviewerId Int
+  reviewer   User @relation("SentReviews", fields: [reviewerId], references: [id])
+
+  workerId Int
+  worker   User @relation("ReceivedReviews", fields: [workerId], references: [id])
+}
+
+model WorkerProfile {
+  id          Int     @id @default(autoincrement())
+  occupation  String // Ej: Plumber
+  description String  @db.Text
+  dni         String  @unique
+ 
+  // FOTOS DE VALIDACIÓN
+  dniFront     String?  // Foto frente
+  dniBack      String?  // Foto dorso
+  selfie       String?  // Selfie con DNI
+  
+  // ESTADO DE VERIFICACIÓN
+  verification VerificationStatus @default(NOT_STARTED)
+
+  hourlyRate  Float?
+  lastLat     Float?
+  lastLng     Float?
+
+  userId    Int    @unique
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  latitude  Float?
+  longitude Float?
+  mercadopagoId     String?  @unique // ID de usuario de MP
+  workerAccessToken String?  // Token de acceso del worker (para crear la preferencia)
+  workerRefreshToken String? // Para renovar el token cuando expire
+}
+
+model Bid {
+  id           Int      @id @default(autoincrement())
+  message      String   @db.Text
+  price        Float
+  estimatedMin Int
+  createdAt    DateTime @default(now())
+
+  status BidStatus @default(PENDING)
+
+  jobId Int
+  job   Job @relation(fields: [jobId], references: [id])
+
+  workerId Int
+  worker   User @relation("WorkerBids", fields: [workerId], references: [id])
+}
+
 model JobAdjustment {
-  id          Int      @id @default(autoincrement())
-  motivo      String
-  montoPrevio Float
-  montoNuevo  Float
-  jobId       Int
-  job         Job      @relation(fields: [jobId], references: [id])
+  id         Int    @id @default(autoincrement())
+  reason     String
+  prevAmount Float
+  newAmount  Float
+  jobId      Int
+  job        Job    @relation(fields: [jobId], references: [id])
 }
 
-// ENUMS para mantener consistencia de datos
 enum Role {
   CLIENT
   WORKER
@@ -77,8 +131,49 @@ enum Role {
 }
 
 enum JobStatus {
-  PENDIENTE
-  EN_PROGRESO
-  COMPLETADO
-  CANCELADO
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  PAID
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false) // <--- Nuevo campo
+  senderId  Int
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  jobId     Int
+  job       Job      @relation(fields: [jobId], references: [id])
+}
+
+// app/server/prisma/schema.prisma
+
+model Transaction {
+  id    Int @id @default(autoincrement())
+  jobId Int @unique
+  job   Job @relation(fields: [jobId], references: [id])
+
+  mpPaymentId String? // ID de pago que devuelve Mercado Pago
+  totalAmount Float // Precio total pagado por el cliente
+  commission  Float // Tu parte (ej: 10%)
+  workerNet   Float // Lo que le queda al trabajador
+
+  status    String // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+}
+
+enum VerificationStatus {
+  NOT_STARTED
+  PENDING    // Subió los documentos, esperando que el Admin apruebe
+  VERIFIED   // Todo ok, puede postularse
+  REJECTED   // Los documentos no eran legibles o eran falsos
 }

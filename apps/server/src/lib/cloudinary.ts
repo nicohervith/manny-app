@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import multer from "multer";
 import dotenv from "dotenv";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 dotenv.config();
 
@@ -14,10 +14,20 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
+    // Definimos la carpeta base
+    let folderPath = "findJob";
+
+    if (file.fieldname === "images") {
+      folderPath = "findJob/jobs_images";
+    } else if (file.fieldname === "avatar") {
+      folderPath = "findJob/avatars";
+    }
+
     return {
-      folder: "dni_workers", // Carpeta en Cloudinary
+      folder: folderPath,
       allowed_formats: ["jpg", "png", "jpeg"],
-      public_id: `dni-${Date.now()}`,
+      public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+      resource_type: "image",
     };
   },
 });
