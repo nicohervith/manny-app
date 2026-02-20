@@ -8,12 +8,16 @@ import jobRoutes from "./routes/job.routes.js";
 import workerRoutes from "./routes/worker.routes.js";
 import reviewRoutes from "./routes/reviews.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
 dotenv.config();
 
 const app = express();
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const httpServer = createServer(app); // Creamos el servidor HTTP
 const io = new Server(httpServer, {
@@ -61,6 +65,7 @@ app.use("/api/bids", bidRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Ruta de prueba
 app.get("/health", (req, res) => {

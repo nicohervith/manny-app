@@ -74,7 +74,15 @@ model WorkerProfile {
   occupation  String // Ej: Plumber
   description String  @db.Text
   dni         String  @unique
-  dniPhoto    String?
+ 
+  // FOTOS DE VALIDACIÓN
+  dniFront     String?  // Foto frente
+  dniBack      String?  // Foto dorso
+  selfie       String?  // Selfie con DNI
+  
+  // ESTADO DE VERIFICACIÓN
+  verification VerificationStatus @default(NOT_STARTED)
+
   hourlyRate  Float?
   lastLat     Float?
   lastLng     Float?
@@ -158,4 +166,11 @@ model Transaction {
 
   status    String // PENDING, APPROVED, REJECTED
   createdAt DateTime @default(now())
+}
+
+enum VerificationStatus {
+  NOT_STARTED
+  PENDING    // Subió los documentos, esperando que el Admin apruebe
+  VERIFIED   // Todo ok, puede postularse
+  REJECTED   // Los documentos no eran legibles o eran falsos
 }

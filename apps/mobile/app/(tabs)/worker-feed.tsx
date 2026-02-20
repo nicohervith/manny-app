@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import axios from "axios";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
@@ -34,15 +35,14 @@ export default function WorkerFeedScreen() {
     tiempo: "",
   });
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-
-  // Función para calcular distancia (Haversine)
+  const router = useRouter();
   const calculateDistance = (
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number,
   ) => {
-    const R = 6371; // Radio de la Tierra en km
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -80,11 +80,60 @@ export default function WorkerFeedScreen() {
     }
   };
 
+  const handlePressApply = async (job: any) => {
+    const userDataRaw = await SecureStore.getItemAsync("userData");
+    const user = JSON.parse(userDataRaw || "{}");
+
+    try {
+      const res = await axios.get(`${API_URL}/api/worker/status/${user.id}`);
+      const { verification } = res.data; 
+
+      if (verification !== "VERIFIED") {
+        Alert.alert(
+          "Verificación Requerida",
+          "Tu cuenta está en estado: " + verification,
+          [
+            { text: "Cerrar" },
+            {
+              text: "Ver mi Perfil",
+              onPress: () => router.push("/worker/complete-profile"),
+            },
+          ],
+        );
+        return;
+      }
+
+      setSelectedJob(job);
+      setModalVisible(true);
+    } catch (e) {
+      Alert.alert("Error", "No pudimos validar tu perfil.");
+    }
+  };
+
   const handleApply = async () => {
     try {
-      const userData = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userData || "{}");
+      const userDataRaw = await SecureStore.getItemAsync("userData");
+      const user = JSON.parse(userDataRaw || "{}");
 
+      const verificationStatus = user.profile?.verification;
+
+      if (verificationStatus === "PENDING") {
+        Alert.alert(
+          "Perfil en revisión",
+          "Tu identidad está siendo validada. Podrás postularte en cuanto un administrador te apruebe.",
+        );
+        setModalVisible(false);
+        return;
+      }
+
+      if (verificationStatus === "REJECTED") {
+        Alert.alert(
+          "Perfil rechazado",
+          "Tu validación de identidad fue rechazada. Por favor, revisa tus datos en tu perfil.",
+        );
+        setModalVisible(false);
+        return;
+      }
       await axios.post(`${API_URL}/api/bids/apply`, {
         jobId: selectedJob.id,
         workerId: user.id,
@@ -96,11 +145,12 @@ export default function WorkerFeedScreen() {
       Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada al cliente.");
       setModalVisible(false);
       setBidData({ price: "", message: "", tiempo: "" });
-    } catch (error) {
-      Alert.alert("Error", "No se pudo enviar la propuesta.");
+    } catch (error: any) {
+      const errorMsg =
+        error.response?.data?.error || "No se pudo enviar la propuesta.";
+      Alert.alert("Acceso Restringido", errorMsg);
     }
   };
-
   // --- Lógica de filtrado ---
   const filteredJobs = jobs.filter((item) => {
     if (!location || !item.latitude || !item.longitude) return true;
@@ -112,7 +162,7 @@ export default function WorkerFeedScreen() {
       item.longitude,
     );
 
-    return distance <= radius; // Solo trabajos dentro del radio
+    return distance <= radius; 
   });
 
   useEffect(() => {
@@ -131,8 +181,6 @@ export default function WorkerFeedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/*  <Text style={styles.title}>Available Jobs</Text> */}
-
         <View
           style={{
             flexDirection: "row",
@@ -199,10 +247,7 @@ export default function WorkerFeedScreen() {
               <JobCard
                 item={item}
                 distance={distance}
-                onApply={(job) => {
-                  setSelectedJob(job);
-                  setModalVisible(true);
-                }}
+                onApply={(job) => handlePressApply(job)}
               />
             );
           }}
@@ -250,8 +295,7 @@ export default function WorkerFeedScreen() {
                 zIndex={10}
                 // IMPORTANTE: Este evento se dispara al tocar el globo (Callout) en Android y iOS
                 onCalloutPress={() => {
-                  setSelectedJob(job);
-                  setModalVisible(true);
+                  handlePressApply(job);
                 }}
               >
                 <View style={styles.customMarker}>
@@ -334,7 +378,7 @@ export default function WorkerFeedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F4F7" },
-  header: { padding: 20, paddingTop: 60, backgroundColor: "#fff" },
+  header: { padding: 20, paddingTop: 20, backgroundColor: "#fff" },
   title: { fontSize: 26, fontWeight: "bold", color: "#1A1A1A" },
   subtitle: { fontSize: 14, color: "#666", marginTop: 4 },
   jobCard: {

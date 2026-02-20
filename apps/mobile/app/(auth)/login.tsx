@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -11,7 +13,6 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 import { useAuthStore } from "../../src/store/authStore";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -30,26 +31,37 @@ export default function LoginScreen() {
         password,
       });
 
-      // Dentro de handleLogin en login.tsx
+      console.log("Respuesta completa del servidor:", response.data);
+
+      // Desestructuramos el token y el user de la respuesta
       const { token, user } = response.data;
+
+      if (!token) {
+        console.error("¡EL SERVIDOR NO ENVIÓ NINGÚN TOKEN!");
+        Alert.alert("Error", "Problema de autenticación en el servidor.");
+        return;
+      }
+
+      // Guardamos en SecureStore
       await SecureStore.setItemAsync("userToken", token);
-      /*  await SecureStore.setItemAsync("userData", JSON.stringify(user)); */
-      await SecureStore.setItemAsync(
-        "userData",
-        JSON.stringify(response.data.user),
-      );
-      // Dentro de handleLogin en login.tsx
-      if (user.role === "WORKER" && !user.profile) {
+      await SecureStore.setItemAsync("userData", JSON.stringify(user));
+
+      console.log("Token guardado con éxito");
+
+      // Redirección según rol
+      if (user.role === "ADMIN") {
+        router.replace("/(tabs)/verify-workers"); // O la ruta de tu tab de admin
+      } else if (user.role === "WORKER" && !user.profile) {
         router.replace("/worker/complete-profile");
-      } else if (user.role === "WORKER") {
-        // Ir directamente al feed de trabajos
-        router.replace("/(tabs)/worker-feed");
       } else {
-        // Clientes van a la búsqueda de profesionales
         router.replace("/(tabs)");
       }
     } catch (error: any) {
-      alert(error.response?.data?.error || "Error al iniciar sesión");
+      console.error("Error en login:", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Error al iniciar sesión",
+      );
     } finally {
       setLoading(false);
     }
