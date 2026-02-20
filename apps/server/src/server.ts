@@ -9,6 +9,7 @@ import workerRoutes from "./routes/worker.routes.js";
 import reviewRoutes from "./routes/reviews.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import userRoutes from "./routes/user.routes.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
@@ -66,6 +67,8 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
+
 
 // Ruta de prueba
 app.get("/health", (req, res) => {

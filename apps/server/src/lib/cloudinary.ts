@@ -14,12 +14,20 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Aquí definimos la carpeta
+    // Definimos la carpeta base
+    let folderPath = "findJob";
+
+    if (file.fieldname === "images") {
+      folderPath = "findJob/jobs_images";
+    } else if (file.fieldname === "avatar") {
+      folderPath = "findJob/avatars";
+    }
+
     return {
-      folder: "findJob", // <--- Reemplaza con el nombre EXACTO de tu carpeta creada en Cloudinary
+      folder: folderPath,
       allowed_formats: ["jpg", "png", "jpeg"],
-      public_id: `${file.fieldname}-${Date.now()}`, // Usamos el nombre del campo (dniFront, etc) para identificar mejor
-      resource_type: "image", // Forzamos a que se trate como imagen
+      public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+      resource_type: "image",
     };
   },
 });

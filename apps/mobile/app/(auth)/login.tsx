@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 import { useAuthStore } from "../../src/store/authStore";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,8 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const { setUser } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -31,26 +33,19 @@ export default function LoginScreen() {
         password,
       });
 
-      console.log("Respuesta completa del servidor:", response.data);
-
-      // Desestructuramos el token y el user de la respuesta
       const { token, user } = response.data;
 
       if (!token) {
-        console.error("¡EL SERVIDOR NO ENVIÓ NINGÚN TOKEN!");
         Alert.alert("Error", "Problema de autenticación en el servidor.");
         return;
       }
-
-      // Guardamos en SecureStore
       await SecureStore.setItemAsync("userToken", token);
       await SecureStore.setItemAsync("userData", JSON.stringify(user));
+      setUser(user);
 
-      console.log("Token guardado con éxito");
-
-      // Redirección según rol
+      console.log("Login exitoso, usuario seteado en Contexto");
       if (user.role === "ADMIN") {
-        router.replace("/(tabs)/verify-workers"); // O la ruta de tu tab de admin
+        router.replace("/(tabs)/verify-workers");
       } else if (user.role === "WORKER" && !user.profile) {
         router.replace("/worker/complete-profile");
       } else {

@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  View,
 } from "react-native";
-import axios from "axios";
-import { useRouter } from "expo-router";
-import * as Location from "expo-location";
-import * as SecureStore from "expo-secure-store";
-import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../src/constants/Config";
 
 export default function CreateJobScreen() {
@@ -24,12 +26,41 @@ export default function CreateJobScreen() {
     description: "",
     budget: "",
   });
+  const [images, setImages] = useState<string[]>([]);
 
   const [location, setLocation] =
     useState<Location.LocationObjectCoords | null>(null);
   const [gettingLocation, setGettingLocation] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permiso denegado",
+        "Necesitamos acceso a tus fotos para mostrar el problema.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true, // Permitir varias
+      selectionLimit: 5, // Límite de 5 fotos
+      quality: 0.6, // Comprimir un poco para subir más rápido
+    });
+
+    if (!result.canceled) {
+      // Agregamos las nuevas imágenes al array existente
+      const selectedUris = result.assets.map((asset) => asset.uri);
+      setImages([...images, ...selectedUris].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
 
   // Obtener ubicación al montar el componente
   useEffect(() => {
@@ -83,27 +114,38 @@ export default function CreateJobScreen() {
       const userData = await SecureStore.getItemAsync("userData");
       const user = JSON.parse(userData || "{}");
 
-      const payload = {
-        titulo: form.title,
-        descripcion: form.description,
-        presupuesto: form.budget ? parseFloat(form.budget) : null,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        clienteId: user.id,
-      };
+      // IMPORTANTE: Usamos FormData para enviar archivos
+      const formData = new FormData();
+      formData.append("title", form.title); // Asegúrate que coincida con lo que el backend espera
+      formData.append("description", form.description);
+      formData.append("clientId", user.id.toString());
+      formData.append("budget", form.budget || "0");
+      formData.append("latitude", location.latitude.toString());
+      formData.append("longitude", location.longitude.toString());
 
-      await axios.post(`${API_URL}/api/jobs/create`, payload);
+      // Adjuntamos las imágenes
+      images.forEach((uri, index) => {
+        const fileName = uri.split("/").pop();
+        const fileType = fileName?.split(".").pop();
 
-      Alert.alert(
-        "¡Publicado!",
-        "Tu solicitud ya es visible para los trabajadores cercanos.",
-      );
+        // @ts-ignore
+        formData.append("images", {
+          uri: Platform.OS === "android" ? uri : uri.replace("file://", ""),
+          name: `job_image_${index}.${fileType}`,
+          type: `image/${fileType}`,
+        });
+      });
+
+      await axios.post(`${API_URL}/api/jobs/create`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Alert.alert("¡Publicado!", "Tu solicitud ya es visible.");
       router.replace("/(tabs)/my-jobs");
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Hubo un problema al conectar con el servidor.");
+      Alert.alert("Error", "No se pudo publicar el trabajo.");
     } finally {
-      
       setIsSubmitting(false);
     }
   };
@@ -142,6 +184,33 @@ export default function CreateJobScreen() {
                 ? "Ubicación detectada correctamente"
                 : "No se pudo detectar la ubicación"}
           </Text>
+        </View>
+
+        {/* SECCIÓN DE IMÁGENES */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Fotos del problema (Máx. 5)</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageScroll}
+          >
+            <TouchableOpacity style={styles.pickImageBtn} onPress={pickImages}>
+              <Ionicons name="camera" size={30} color="#007AFF" />
+              <Text style={styles.pickImageText}>Añadir</Text>
+            </TouchableOpacity>
+
+            {images.map((uri, index) => (
+              <View key={index} style={styles.imageWrapper}>
+                <Image source={{ uri }} style={styles.thumbnail} />
+                <TouchableOpacity
+                  style={styles.removeBtn}
+                  onPress={() => removeImage(index)}
+                >
+                  <Ionicons name="close-circle" size={24} color="#FF3B30" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.inputGroup}>
@@ -306,5 +375,43 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 18,
+  },
+  imageScroll: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  pickImageBtn: {
+    width: 100,
+    height: 100,
+    backgroundColor: "#f0f7ff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  pickImageText: {
+    color: "#007AFF",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  imageWrapper: {
+    position: "relative",
+    marginRight: 12,
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+  },
+  removeBtn: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
   },
 });

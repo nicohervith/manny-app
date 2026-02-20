@@ -1,23 +1,37 @@
 import { Router } from "express";
+import { upload } from "../lib/cloudinary.js";
 import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
 // Crear un nuevo trabajo
-router.post("/create", async (req, res) => {
+router.post("/create", upload.array("images", 5), async (req, res) => {
   try {
-    const { title, description, clientId, budget, latitude, longitude } =
-      req.body;
+    const {
+      title,
+      description,
+      clientId,
+      budget,
+      latitude,
+      longitude,
+      address,
+    } = req.body;
+
+    // Extraemos las URLs de los archivos subidos a Cloudinary
+    const files = req.files as Express.Multer.File[];
+    const imageUrls = files ? files.map((file) => file.path).join(",") : null;
 
     const newJob = await prisma.job.create({
       data: {
-        title, // antes titulo
-        description, // antes descripcion
-        clientId: parseInt(clientId), // antes clienteId
-        budget: budget ? parseFloat(budget) : null, // antes presupuesto
+        title,
+        description,
+        clientId: parseInt(clientId),
+        budget: budget ? parseFloat(budget) : null,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
-        status: "PENDING", // antes estado y PENDIENTE
+        address,
+        images: imageUrls, // Guardamos las URLs
+        status: "PENDING",
       },
     });
 
@@ -30,6 +44,26 @@ router.post("/create", async (req, res) => {
   }
 });
 
+// NUEVA RUTA: Proponer ajuste de presupuesto
+router.post("/adjust-budget", async (req, res) => {
+  const { jobId, newAmount, reason } = req.body;
+  try {
+    const adjustment = await prisma.jobAdjustment.create({
+      data: {
+        jobId: parseInt(jobId),
+        prevAmount: 0, // Podrías buscar el budget actual aquí
+        newAmount: parseFloat(newAmount),
+        reason,
+      },
+    });
+
+    // Opcional: Cambiar estado del trabajo a "WAITING_APPROVAL" o similar
+    res.json({ message: "Ajuste propuesto al cliente", adjustment });
+  } catch (error) {
+    res.status(500).json({ error: "No se pudo proponer el ajuste" });
+  }
+});
+
 // Obtener trabajos disponibles
 router.get("/available", async (req, res) => {
   try {
@@ -39,8 +73,7 @@ router.get("/available", async (req, res) => {
       },
       include: {
         client: {
-          // antes cliente
-          select: { name: true }, // antes nombre
+          select: { name: true, avatar: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -116,11 +149,6 @@ router.get("/feed/:workerId", async (req, res) => {
 
     const { latitude: wLat, longitude: wLon } = worker;
 
-    /**
-     * 2. Consulta SQL para calcular distancia (Haversine)
-     * 6371 es el radio de la tierra en KM.
-     * Filtramos tareas que estén "OPEN" y no sean del propio usuario.
-     */
     const jobs = await prisma.$queryRaw`
       SELECT 
         t.id, 
@@ -156,25 +184,18 @@ router.get("/feed/:workerId", async (req, res) => {
 router.post("/accept-bid", async (req, res) => {
   try {
     const { jobId, workerId, bidId } = req.body;
-
-    // Usamos una transacción para asegurar que ambos cambios ocurran o ninguno
-    // Importa el Enum si es necesario o úsalo como string si Prisma lo permite
     await prisma.$transaction([
-      // 1. Actualizar el Trabajo
       prisma.job.update({
-        // Asegúrate si es .task o .job según tu schema
         where: { id: parseInt(jobId) },
         data: {
           status: "IN_PROGRESS",
           workerId: parseInt(workerId),
         },
       }),
-      // 2. Aceptar la oferta elegida
       prisma.bid.update({
         where: { id: parseInt(bidId) },
-        data: { status: "ACCEPTED" }, // Ahora TypeScript reconocerá 'status'
+        data: { status: "ACCEPTED" },
       }),
-      // 3. Rechazar las demás
       prisma.bid.updateMany({
         where: {
           jobId: parseInt(jobId),
@@ -193,7 +214,7 @@ router.post("/accept-bid", async (req, res) => {
 
 router.patch("/:id/status", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; 
+  const { status } = req.body;
 
   try {
     const updatedJob = await prisma.job.update({

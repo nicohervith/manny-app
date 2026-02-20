@@ -1,6 +1,14 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ImageLightbox } from "./ImageLightbox";
 
 interface JobCardProps {
   item: any;
@@ -9,6 +17,9 @@ interface JobCardProps {
 }
 
 export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const jobImages = item.images ? item.images.split(",") : [];
+
   return (
     <View style={styles.jobCard}>
       <View style={styles.jobHeader}>
@@ -21,14 +32,49 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
         )}
       </View>
 
+      {/* CARRUSEL DE IMÁGENES CON TOUCHABLE */}
+      {jobImages.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageScroll}
+        >
+          {jobImages.map((imgUrl, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setSelectedImg(imgUrl)} // Seteamos la imagen para abrir el modal
+              activeOpacity={0.8}
+            >
+              <Image
+                source={{ uri: imgUrl }}
+                style={styles.jobImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       <Text style={styles.description} numberOfLines={3}>
-        {item.descripcion}
+        {item.description} {/* Cambiado de descripcion a description */}
       </Text>
 
       <View style={styles.footer}>
-        <View>
-          <Text style={styles.clientLabel}>Posted by:</Text>
-          <Text style={styles.clientName}>{item.client?.name}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* FOTO DE PERFIL DEL CLIENTE */}
+          {item.client?.avatar ? (
+            <Image
+              source={{ uri: item.client.avatar }}
+              style={styles.clientAvatar}
+            />
+          ) : (
+            <Ionicons name="person-circle" size={35} color="#CCC" />
+          )}
+
+          <View style={{ marginLeft: 8 }}>
+            <Text style={styles.clientLabel}>Publicado por:</Text>
+            <Text style={styles.clientName}>{item.client?.name}</Text>
+          </View>
         </View>
         <TouchableOpacity
           style={styles.applyButton}
@@ -37,6 +83,12 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
           <Text style={styles.applyButtonText}>Apply Now</Text>
         </TouchableOpacity>
       </View>
+      {/* COMPONENTE LIGHTBOX */}
+      <ImageLightbox
+        visible={!!selectedImg}
+        imageUrl={selectedImg}
+        onClose={() => setSelectedImg(null)}
+      />
     </View>
   );
 };
@@ -57,6 +109,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 8,
   },
   jobTitle: { fontSize: 18, fontWeight: "bold", color: "#333", flex: 1 },
   distanceBadge: {
@@ -72,7 +125,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
   },
-  description: { color: "#555", marginVertical: 10, lineHeight: 20 },
+  // NUEVOS ESTILOS PARA IMÁGENES
+  imageScroll: {
+    marginVertical: 10,
+  },
+  jobImage: {
+    width: 140,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 10,
+    backgroundColor: "#F0F0F0", // Color de carga mientras descarga la imagen
+  },
+  description: { color: "#555", marginBottom: 10, lineHeight: 20 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -91,4 +155,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   applyButtonText: { color: "#fff", fontWeight: "bold" },
+  clientAvatar: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: "#eee",
+  },
 });

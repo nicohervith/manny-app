@@ -9,18 +9,19 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import { JobCard } from "../../src/components/jobCard";
 import { API_URL } from "../../src/constants/Config";
+import { ApplyBidModal } from "../worker/ApplyBidModal";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function WorkerFeedScreen() {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,78 +81,50 @@ export default function WorkerFeedScreen() {
     }
   };
 
-  const handlePressApply = async (job: any) => {
-    const userDataRaw = await SecureStore.getItemAsync("userData");
-    const user = JSON.parse(userDataRaw || "{}");
+const handlePressApply = async (job: any) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/worker/status/${user.id}`);
+    const { verification } = res.data;
 
-    try {
-      const res = await axios.get(`${API_URL}/api/worker/status/${user.id}`);
-      const { verification } = res.data; 
-
-      if (verification !== "VERIFIED") {
-        Alert.alert(
-          "Verificación Requerida",
-          "Tu cuenta está en estado: " + verification,
-          [
-            { text: "Cerrar" },
-            {
-              text: "Ver mi Perfil",
-              onPress: () => router.push("/worker/complete-profile"),
-            },
-          ],
-        );
-        return;
-      }
-
-      setSelectedJob(job);
-      setModalVisible(true);
-    } catch (e) {
-      Alert.alert("Error", "No pudimos validar tu perfil.");
+    if (verification !== "VERIFIED") {
+      Alert.alert(
+        "Verificación Requerida",
+        `Tu cuenta está en estado: ${verification}`,
+        [
+          { text: "Cerrar" },
+          {
+            text: "Ver mi Perfil",
+            onPress: () => router.push("/worker/complete-profile"),
+          },
+        ],
+      );
+      return;
     }
-  };
 
-  const handleApply = async () => {
-    try {
-      const userDataRaw = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userDataRaw || "{}");
+    setSelectedJob(job);
+    setModalVisible(true);
+  } catch (e) {
+    Alert.alert("Error", "No pudimos validar tu perfil.");
+  }
+};
 
-      const verificationStatus = user.profile?.verification;
+const handleApplyAction = async (data: any) => {
+  try {
+    await axios.post(`${API_URL}/api/bids/apply`, {
+      jobId: selectedJob.id,
+      workerId: user.id,
+      message: data.message,
+      price: data.price,
+      estimatedMin: data.tiempo,
+    });
 
-      if (verificationStatus === "PENDING") {
-        Alert.alert(
-          "Perfil en revisión",
-          "Tu identidad está siendo validada. Podrás postularte en cuanto un administrador te apruebe.",
-        );
-        setModalVisible(false);
-        return;
-      }
+    Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada.");
+    setModalVisible(false);
+  } catch (error) {
+    Alert.alert("Error", "No se pudo enviar la propuesta.");
+  }
+};
 
-      if (verificationStatus === "REJECTED") {
-        Alert.alert(
-          "Perfil rechazado",
-          "Tu validación de identidad fue rechazada. Por favor, revisa tus datos en tu perfil.",
-        );
-        setModalVisible(false);
-        return;
-      }
-      await axios.post(`${API_URL}/api/bids/apply`, {
-        jobId: selectedJob.id,
-        workerId: user.id,
-        message: bidData.message,
-        price: bidData.price,
-        estimatedMin: bidData.tiempo,
-      });
-
-      Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada al cliente.");
-      setModalVisible(false);
-      setBidData({ price: "", message: "", tiempo: "" });
-    } catch (error: any) {
-      const errorMsg =
-        error.response?.data?.error || "No se pudo enviar la propuesta.";
-      Alert.alert("Acceso Restringido", errorMsg);
-    }
-  };
-  // --- Lógica de filtrado ---
   const filteredJobs = jobs.filter((item) => {
     if (!location || !item.latitude || !item.longitude) return true;
 
@@ -162,7 +135,7 @@ export default function WorkerFeedScreen() {
       item.longitude,
     );
 
-    return distance <= radius; 
+    return distance <= radius;
   });
 
   useEffect(() => {
@@ -284,7 +257,6 @@ export default function WorkerFeedScreen() {
             )}
 
             {/* Marcadores de los trabajos filtrados */}
-            {/* Marcadores de los trabajos filtrados */}
             {filteredJobs.map((job) => (
               <Marker
                 key={job.id}
@@ -293,7 +265,6 @@ export default function WorkerFeedScreen() {
                   longitude: job.longitude,
                 }}
                 zIndex={10}
-                // IMPORTANTE: Este evento se dispara al tocar el globo (Callout) en Android y iOS
                 onCalloutPress={() => {
                   handlePressApply(job);
                 }}
@@ -323,55 +294,13 @@ export default function WorkerFeedScreen() {
           </MapView>
         </View>
       )}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Enviar Propuesta</Text>
-            <Text style={styles.modalSubtitle}>{selectedJob?.title}</Text>
-
-            <Text style={styles.label}>Tu Precio ($)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Ej: 5000"
-              keyboardType="numeric"
-              onChangeText={(text) => setBidData({ ...bidData, price: text })}
-            />
-
-            <Text style={styles.label}>Tiempo estimado de llegada (min)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Ej: 30"
-              keyboardType="numeric"
-              onChangeText={(text) => setBidData({ ...bidData, tiempo: text })}
-            />
-
-            <Text style={styles.label}>Mensaje al cliente</Text>
-            <TextInput
-              style={[styles.modalInput, { height: 80 }]}
-              placeholder="Cuéntale por qué eres el indicado..."
-              multiline
-              onChangeText={(text) => setBidData({ ...bidData, message: text })}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={{ color: "#666" }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleApply}
-              >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                  Enviar Oferta
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* MODAL MODULARIZADO */}
+      <ApplyBidModal
+        visible={modalVisible}
+        jobTitle={selectedJob?.title}
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleApplyAction}
+      />
     </View>
   );
 }
@@ -431,24 +360,6 @@ const styles = StyleSheet.create({
   },
   applyButtonText: { color: "#fff", fontWeight: "bold" },
   emptyText: { textAlign: "center", marginTop: 50, color: "#999" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: { backgroundColor: "#fff", borderRadius: 20, padding: 25 },
-  modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
-  modalSubtitle: { color: "#007AFF", marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: "bold", marginTop: 10, marginBottom: 5 },
-  modalInput: { backgroundColor: "#F0F2F5", borderRadius: 10, padding: 12 },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 25,
-  },
-  cancelButton: { padding: 15, marginRight: 10 },
-  confirmButton: { backgroundColor: "#007AFF", padding: 15, borderRadius: 10 },
   filterContainer: {
     marginTop: 15,
     padding: 15,
