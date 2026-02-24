@@ -488,19 +488,19 @@ const styles = StyleSheet.create({
   },
   imageBox: {
     alignItems: "center",
-    width: "32%", // Ajustado para que entren bien con el margen
+    width: "32%", 
   },
   imagePicker: {
     width: "100%",
-    height: 100, // Altura fija para el cuadro de la foto
+    height: 100, 
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#CCC",
-    borderStyle: "dashed", // Estilo punteado profesional
+    borderStyle: "dashed", 
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden", // Para que la imagen no se salga de las esquinas redondeadas
+    overflow: "hidden",
   },
   preview: {
     width: "100%",

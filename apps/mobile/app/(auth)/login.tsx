@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
-import { useAuthStore } from "../../src/store/authStore";
 import { useAuth } from "../../src/context/AuthContext";
 
 export default function LoginScreen() {
@@ -64,9 +63,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>MannyJobs</Text>
+      <Text style={styles.title}>Mani Oficios Cerca</Text>
       <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
-
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -75,7 +73,6 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
       />
-
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.passwordInput} // Estilo ajustado para que no pise el icono
@@ -95,7 +92,6 @@ export default function LoginScreen() {
           />
         </TouchableOpacity>
       </View>
-
       <TouchableOpacity
         style={[styles.button, loading && { opacity: 0.7 }]}
         onPress={handleLogin}
@@ -105,7 +101,14 @@ export default function LoginScreen() {
           {loading ? "Cargando..." : "Ingresar"}
         </Text>
       </TouchableOpacity>
-
+      <TouchableOpacity
+        onPress={() => router.push("/(auth)/forgot-password")}
+        style={{ marginTop: 15 }}
+      >
+        <Text style={[styles.linkText, { color: "#666", fontSize: 14 }]}>
+          ¿Olvidaste tu contraseña?
+        </Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
         <Text style={styles.linkText}>¿No tienes cuenta? Regístrate aquí</Text>
       </TouchableOpacity>
