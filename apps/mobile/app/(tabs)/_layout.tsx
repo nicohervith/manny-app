@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs, usePathname, useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
-import { useEffect, useState } from "react";
+import { Tabs, usePathname, useRouter } from "expo-router";
+import { useEffect } from "react";
 import Toast from "react-native-toast-message";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
@@ -24,7 +24,7 @@ Notifications.setNotificationHandler({
 });
 
 export default function TabLayout() {
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -33,18 +33,23 @@ export default function TabLayout() {
     if (!user) return;
 
     const initializeServices = async () => {
-      // Registrar Push Token en el servidor
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        try {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        // Solo intentamos guardar si realmente obtuvimos un token
+        if (token) {
           await api.patch(`/api/users/update-push-token/${user.id}`, {
             pushToken: token,
           });
           console.log("Push Token guardado");
-        } catch (e) {
-          console.error("Error guardando Push Token", e);
         }
+      } catch (e) {
+        // Esto atrapará el error de Expo Go sin romper la app
+        console.warn(
+          "Las notificaciones no están disponibles en este entorno (Probablemente Expo Go)",
+        );
       }
+
+      // El socket sí debería funcionar en Expo Go, así que lo dejamos fuera del catch anterior o en su propio bloque
       try {
         const res = await api.get(`/api/chat/list/${user.id}`);
         res.data.forEach((chat: any) => {
@@ -59,26 +64,26 @@ export default function TabLayout() {
   }, [user]);
 
   // 3. MANEJO DE CLIC EN NOTIFICACIÓN (Deep Linking)
-useEffect(() => {
-  const subscription = Notifications.addNotificationResponseReceivedListener(
-    (response) => {
-      // 1. Extraemos los datos y les asignamos un tipo (casting)
-      const data = response.notification.request.content.data as {
-        jobId?: string | number;
-        type?: string;
-      };
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        // 1. Extraemos los datos y les asignamos un tipo (casting)
+        const data = response.notification.request.content.data as {
+          jobId?: string | number;
+          type?: string;
+        };
 
-      const { jobId, type } = data;
+        const { jobId, type } = data;
 
-      if (type === "NEW_BID" && jobId) {
-        // @ts-ignore
-        router.push(`/(tabs)/my-jobs/${jobId}`);
-      }
-    },
-  );
+        if (type === "NEW_BID" && jobId) {
+          // @ts-ignore
+          router.push(`/(tabs)/my-jobs/${jobId}`);
+        }
+      },
+    );
 
-  return () => subscription.remove();
-}, []);
+    return () => subscription.remove();
+  }, []);
 
   // 4. LÓGICA DE SOCKETS (Se mantiene similar, pero usando 'user')
   useEffect(() => {

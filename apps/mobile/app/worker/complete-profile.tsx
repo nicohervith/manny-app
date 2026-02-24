@@ -2,9 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,12 +19,16 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { API_URL } from "../../src/constants/Config";
+import api from "../../src/services/api";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   const [form, setForm] = useState({
     occupation: "",
@@ -49,17 +53,25 @@ export default function CompleteProfileScreen() {
     longitudeDelta: 0.01,
   });
 
-  useEffect(() => {
-    loadExistingProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadExistingProfile();
+    }, []),
+  );
 
   const loadExistingProfile = async () => {
     try {
       const userDataRaw = await SecureStore.getItemAsync("userData");
       const user = userDataRaw ? JSON.parse(userDataRaw) : null;
+
       if (!user) return;
 
-      const res = await axios.get(`${API_URL}/api/worker/profile/${user.id}`);
+      // IMPORTANTE: Seteamos el email que viene del login/contexto
+      setUserEmail(user.email);
+      setIsEmailVerified(user.emailVerified || false);
+
+      // Luego sigues con la carga del perfil profesional...
+      const res = await api.get(`/api/worker/profile/${user.id}`);
       if (res.data) {
         const p = res.data;
         setIsEditing(true);
@@ -138,6 +150,15 @@ export default function CompleteProfileScreen() {
       );
     }
     setLoadingLocation(false);
+  };
+
+  const handlePressVerify = async () => {
+    try {
+      await api.post("/api/users/send-code");
+      router.push("/verify-email" as any);
+    } catch (error) {
+      Alert.alert("Error", "No pudimos enviar el código.");
+    }
   };
 
   const saveProfile = async () => {
@@ -224,6 +245,48 @@ export default function CompleteProfileScreen() {
           ? "Editar Perfil Profesional"
           : "Completar Perfil Profesional"}
       </Text>
+
+      {/* Sección de Validación de Email */}
+      <View
+        style={[
+          styles.verificationBanner,
+          isEmailVerified && {
+            backgroundColor: "#E8F5E9",
+            borderColor: "#C8E6C9",
+          }, // Verde suave
+        ]}
+      >
+        <Ionicons
+          name={isEmailVerified ? "checkmark-circle" : "mail-unread-outline"}
+          size={24}
+          color={isEmailVerified ? "#2E7D32" : "#D32F2F"}
+        />
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text
+            style={[
+              styles.verificationTitle,
+              isEmailVerified && { color: "#1B5E20" },
+            ]}
+          >
+            {isEmailVerified ? "Email verificado" : "Verifica tu correo"}
+          </Text>
+          <Text style={styles.verificationSub}>
+            {isEmailVerified
+              ? "Tu cuenta está protegida y vinculada a: "
+              : "Enviaremos un código a: "}
+            <Text style={{ fontWeight: "bold" }}>{userEmail}</Text>
+          </Text>
+        </View>
+
+        {!isEmailVerified && (
+          <TouchableOpacity
+            style={styles.verifyButton}
+            onPress={handlePressVerify}
+          >
+            <Text style={styles.verifyButtonText}>Verificar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Inputs Básicos */}
       <Text style={styles.label}>Ocupación</Text>
@@ -406,17 +469,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
   },
-  imagePicker: {
-    backgroundColor: "#F0F2F5",
-    height: 100,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    borderStyle: "dashed",
-    borderWidth: 1,
-    borderColor: "#ccc",
-  },
-  preview: { width: "100%", height: "100%", borderRadius: 15 },
   button: {
     backgroundColor: "#007AFF",
     padding: 18,
@@ -426,36 +478,75 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
-  /* container: { padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20, color: "#333" },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 5, color: "#666", marginTop: 10 },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: "#f9f9f9" }, */
   disabledInput: { backgroundColor: "#eee", color: "#999" },
   textArea: { height: 100, textAlignVertical: "top" },
-  /* locationContainer: { marginVertical: 15 },
-  map: { width: "100%", height: 150, borderRadius: 10, marginBottom: 10 },
-  mapPlaceholder: { width: "100%", height: 150, backgroundColor: "#eee", justifyContent: "center", alignItems: "center", borderRadius: 10 },
-  locationButton: { backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" }, */
   whiteText: { color: "#fff", fontWeight: "bold" },
-  /*  addressText: { fontSize: 12, color: "#888", marginTop: 5, textAlign: "center" }, */
-
-  // Estilos nuevos para las 3 fotos
   imageGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 15,
   },
-  imageBox: { alignItems: "center", width: "30%" },
-  /* imagePicker: { width: "100%", height: 80, backgroundColor: "#f0f0f0", borderRadius: 8, justifyContent: "center", alignItems: "center", overflow: "hidden", borderWidth: 1, borderColor: "#ddd", borderStyle: "dashed" }, */
-  /* preview: { width: "100%", height: "100%" }, */
+  imageBox: {
+    alignItems: "center",
+    width: "32%", // Ajustado para que entren bien con el margen
+  },
+  imagePicker: {
+    width: "100%",
+    height: 100, // Altura fija para el cuadro de la foto
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderStyle: "dashed", // Estilo punteado profesional
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden", // Para que la imagen no se salga de las esquinas redondeadas
+  },
+  preview: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
   imageLabel: {
-    fontSize: 10,
-    marginTop: 5,
-    color: "#666",
+    fontSize: 11,
+    marginTop: 8,
+    fontWeight: "500",
+    color: "#444",
     textAlign: "center",
   },
-
-  /*   button: { backgroundColor: "#28a745", padding: 16, borderRadius: 10, alignItems: "center", marginTop: 20, marginBottom: 40 }, */
   buttonDisabled: { opacity: 0.6 },
-  /*  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" } */
+  verificationBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFEBEE",
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+    marginBottom: 20,
+    marginTop: 5,
+  },
+  verificationTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#C62828",
+  },
+  verificationSub: {
+    fontSize: 12,
+    color: "#555",
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  verifyButton: {
+    backgroundColor: "#D32F2F",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  verifyButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
 });
