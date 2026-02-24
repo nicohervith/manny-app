@@ -32,7 +32,9 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ]
+      ],
+      "package": "com.nicolashervith.findjob",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -52,11 +54,19 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dbf1dcd6-09ef-42fc-b98c-cda99fa652ea"
+      }
+    },
+    "owner": "nicolashervith"
   }
 }

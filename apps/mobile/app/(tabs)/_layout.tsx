@@ -1,39 +1,94 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
+import * as Notifications from "expo-notifications";
 import { Tabs, usePathname, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Toast from "react-native-toast-message";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
+import { useAuth } from "../../src/context/AuthContext";
+import { registerForPushNotificationsAsync } from "../../src/hooks/usePushNotifications";
+import api from "../../src/services/api";
 
-// Inicializamos el socket (asegúrate de que la URL sea la misma que en ChatScreen)
 const socket = io(API_URL.replace("/api", ""), {
   transports: ["websocket"],
 });
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 export default function TabLayout() {
-  const [role, setRole] = useState<string | null>(null);
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
+  // 2. REGISTRO DE PUSH TOKEN Y UNIÓN A SALAS
   useEffect(() => {
-    const getRole = async () => {
-      const userData = await SecureStore.getItemAsync("userData");
-      if (userData) {
-        const user = JSON.parse(userData);
-        setRole(user.role);
+    if (!user) return;
+
+    const initializeServices = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        // Solo intentamos guardar si realmente obtuvimos un token
+        if (token) {
+          await api.patch(`/api/users/update-push-token/${user.id}`, {
+            pushToken: token,
+          });
+          console.log("Push Token guardado");
+        }
+      } catch (e) {
+        // Esto atrapará el error de Expo Go sin romper la app
+        console.warn(
+          "Las notificaciones no están disponibles en este entorno (Probablemente Expo Go)",
+        );
+      }
+
+      // El socket sí debería funcionar en Expo Go, así que lo dejamos fuera del catch anterior o en su propio bloque
+      try {
+        const res = await api.get(`/api/chat/list/${user.id}`);
+        res.data.forEach((chat: any) => {
+          socket.emit("join-chat", chat.id);
+        });
+      } catch (e) {
+        console.error("Error uniendo a salas", e);
       }
     };
-    getRole();
+
+    initializeServices();
+  }, [user]);
+
+  // 3. MANEJO DE CLIC EN NOTIFICACIÓN (Deep Linking)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        // 1. Extraemos los datos y les asignamos un tipo (casting)
+        const data = response.notification.request.content.data as {
+          jobId?: string | number;
+          type?: string;
+        };
+
+        const { jobId, type } = data;
+
+        if (type === "NEW_BID" && jobId) {
+          // @ts-ignore
+          router.push(`/(tabs)/my-jobs/${jobId}`);
+        }
+      },
+    );
+
+    return () => subscription.remove();
   }, []);
 
-  // Lógica global para Toasts de nuevos mensajes
+  // 4. LÓGICA DE SOCKETS (Se mantiene similar, pero usando 'user')
   useEffect(() => {
     socket.on("new-message", (message) => {
-      // Verificamos si el usuario NO está actualmente en esa pantalla de chat
       const chatRoute = `/chat/${message.jobId}`;
-
       if (pathname !== chatRoute) {
         Toast.show({
           type: "info",
@@ -55,34 +110,10 @@ export default function TabLayout() {
     };
   }, [pathname]);
 
-  // app/(tabs)/_layout.tsx
+  // Si no hay usuario cargado aún, no mostramos los tabs
+  if (!user) return null;
 
-  useEffect(() => {
-    const initSocketAndRole = async () => {
-      const userData = await SecureStore.getItemAsync("userData");
-      if (userData) {
-        const user = JSON.parse(userData);
-        setRole(user.role);
-
-        // 1. Buscamos los chats activos del usuario para unirnos a las salas
-        try {
-          const res = await axios.get(`${API_URL}/api/chat/list/${user.id}`);
-          const activeChats = res.data;
-
-          // 2. Nos unimos a la sala de cada chat para recibir notificaciones
-          activeChats.forEach((chat: any) => {
-            socket.emit("join-chat", chat.id);
-          });
-          console.log("Suscrito a salas de chat para notificaciones");
-        } catch (e) {
-          console.error("Error uniendo a salas globales", e);
-        }
-      }
-    };
-    initSocketAndRole();
-  }, []);
-
-  if (!role) return null;
+  const role = user.role;
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
