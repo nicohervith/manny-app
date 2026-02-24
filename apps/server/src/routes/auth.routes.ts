@@ -33,7 +33,7 @@ router.post("/forgot-password", async (req, res) => {
 
     res.json({ message: "Código de recuperación enviado" });
   } catch (error) {
-    console.error("ERROR DETALLADO EN FORGOT-PASSWORD:", error); // <--- ESTO ES CLAVE
+    console.error("ERROR DETALLADO EN FORGOT-PASSWORD:", error);
     res
       .status(500)
       .json({ error: "Error al procesar la solicitud", details: error });

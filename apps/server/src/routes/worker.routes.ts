@@ -124,11 +124,13 @@ router.get("/profile/:userId", async (req, res) => {
         user: {
           select: {
             name: true,
+            avatar: true,
+            emailVerified: true,
             receivedReviews: {
               include: {
-                reviewer: { select: { name: true } }, // Para saber quién comentó
+                reviewer: { select: { name: true } },
               },
-              orderBy: { createdAt: "desc" }, // Más recientes primero
+              orderBy: { createdAt: "desc" },
             },
           },
         },
@@ -143,13 +145,19 @@ router.get("/profile/:userId", async (req, res) => {
         ? reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length
         : 0;
 
+    // Construimos la respuesta limpia
     res.json({
       ...profile,
+      emailVerified:
+        profile.user.emailVerified === true,
+      // Usamos 'verification' que es como se llama en tu tabla workerProfile
+      isApproved: profile.verification === "VERIFIED",
       averageRating: averageRating.toFixed(1),
       totalReviews: reviews.length,
-      reviews: reviews, // Enviamos la lista completa al front
+      reviews: reviews,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -190,7 +198,7 @@ router.patch("/verify-worker/:userId", async (req, res) => {
 router.get("/status/:userId", async (req, res) => {
   const profile = await prisma.workerProfile.findUnique({
     where: { userId: parseInt(req.params.userId) },
-    select: { verification: true }
+    select: { verification: true },
   });
   res.json({ verification: profile?.verification || "NONE" });
 });
