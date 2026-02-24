@@ -11,6 +11,8 @@ model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
+  emailVerified Boolean  @default(false) // <--- Nuevo campo
+  verificationCode String?
   password  String
   avatar    String?  // <--- AGREGAR ESTO (URL de la imagen)
   phone     String?

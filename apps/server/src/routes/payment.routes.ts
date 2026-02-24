@@ -58,7 +58,7 @@ router.post("/create-preference", async (req, res) => {
         // ------------------------------------------
 
         notification_url:
-          "https://880d-181-116-89-120.ngrok-free.app/api/payments/webhook",
+          "https://f017-181-116-89-120.ngrok-free.app/api/payments/webhook",
       },
     });
 

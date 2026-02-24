@@ -2,6 +2,8 @@
 import { Router } from "express";
 import { upload } from "../lib/cloudinary.js";
 import { prisma } from "../lib/prisma.js";
+import { authenticateToken } from "../middlewares/auth.middleware.js";
+import { sendVerificationEmail } from "../utils/mailer.js";
 
 const router = Router();
 
@@ -50,6 +52,62 @@ router.patch("/update-push-token/:userId", async (req, res) => {
   } catch (error) {
     console.error("Error en DB:", error);
     res.status(500).json({ error: "No se pudo guardar el token" });
+  }
+});
+
+// En user.routes.ts
+// apps/server/src/routes/user.routes.ts
+
+router.post("/send-code", authenticateToken, async (req: any, res) => {
+  // Cambiamos 'id' por 'userId' que es lo que viene en el token
+  const userId = req.user.userId;
+
+  console.log("Iniciando envío para el usuario ID:", userId);
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) }, // Forzamos Number por seguridad
+    });
+
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.user.update({
+      where: { id: Number(userId) },
+      data: { verificationCode: code },
+    });
+
+    await sendVerificationEmail(user.email, code);
+
+    res.json({ message: "Código enviado" });
+  } catch (error) {
+    console.error("DETALLE DEL ERROR:", error);
+    res.status(500).json({ error: "Error al enviar el mail" });
+  }
+});
+
+// 2. Verificar Código
+router.post("/verify-otp", authenticateToken, async (req: any, res) => {
+  const { code } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+    });
+
+    if (user?.verificationCode === code) {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { emailVerified: true, verificationCode: null },
+      });
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "Código incorrecto" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error de servidor" });
   }
 });
 
