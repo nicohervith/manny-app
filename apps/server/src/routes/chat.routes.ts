@@ -24,6 +24,7 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: "Error sending message" });
   }
 });
+
 router.get("/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;

@@ -15,12 +15,12 @@ interface ApplyBidModalProps {
   jobTitle?: string;
 }
 
-export const ApplyBidModal = ({
+export default function ApplyBidModal({
   visible,
   onClose,
   onSubmit,
   jobTitle,
-}: ApplyBidModalProps) => {
+}: ApplyBidModalProps) {
   const [formData, setFormData] = useState({
     price: "",
     message: "",
@@ -80,7 +80,8 @@ export const ApplyBidModal = ({
       </View>
     </Modal>
   );
-};
+}
+
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,

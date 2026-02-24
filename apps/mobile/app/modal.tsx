@@ -3,7 +3,7 @@ import { StyleSheet, View, Text } from "react-native";
 export default function ModalScreen() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>¡Bienvenido a MannyJobs!</Text>
+      <Text>¡Bienvenido a Mani Oficios Cerca!</Text>
     </View>
   );
 }
