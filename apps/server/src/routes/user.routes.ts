@@ -37,4 +37,20 @@ router.patch(
   },
 );
 
+router.patch("/update-push-token/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { pushToken } = req.body;
+  try {
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { pushToken },
+    });
+    console.log(`Token actualizado para el usuario ${userId}`);
+    res.json({ message: "Token actualizado" });
+  } catch (error) {
+    console.error("Error en DB:", error);
+    res.status(500).json({ error: "No se pudo guardar el token" });
+  }
+});
+
 export default router;

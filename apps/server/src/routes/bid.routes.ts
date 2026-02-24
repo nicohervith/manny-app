@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { sendPushNotification } from "../services/notification.service.js";
 
 const router = Router();
 
@@ -7,21 +8,22 @@ router.post("/apply", async (req, res) => {
   try {
     const { jobId, workerId, message, price, estimatedMin } = req.body;
 
-    // --- BLOQUE DE SEGURIDAD ---
-    // 1. Buscamos el perfil del trabajador directamente en la DB
-    const workerProfile = await prisma.workerProfile.findUnique({
-      where: { userId: parseInt(workerId) },
+    // 1. Validar perfil del trabajador
+    const workerUser = await prisma.user.findUnique({
+      where: { id: parseInt(workerId) },
+      include: { profile: true },
     });
 
-    // 2. Si no existe o no está verificado, bloqueamos la operación
-    if (!workerProfile || workerProfile.verification !== "VERIFIED") {
+    if (
+      !workerUser?.profile ||
+      workerUser.profile.verification !== "VERIFIED"
+    ) {
       return res.status(403).json({
-        error:
-          "Acceso denegado. Tu cuenta debe estar verificada por un administrador para postularte.",
+        error: "Acceso denegado. Tu cuenta debe estar verificada.",
       });
     }
-    // ---------------------------
 
+    // 2. Evitar duplicados
     const existingBid = await prisma.bid.findFirst({
       where: {
         jobId: parseInt(jobId),
@@ -31,6 +33,7 @@ router.post("/apply", async (req, res) => {
 
     if (existingBid) return res.status(400).json({ error: "Already applied" });
 
+    // 3. Crear la postulación y obtener datos del trabajo/cliente para la notificación
     const bid = await prisma.bid.create({
       data: {
         jobId: parseInt(jobId),
@@ -39,7 +42,25 @@ router.post("/apply", async (req, res) => {
         price: parseFloat(price),
         estimatedMin: parseInt(estimatedMin),
       },
+      include: {
+        job: {
+          include: {
+            client: true, // Necesitamos el pushToken del cliente
+          },
+        },
+      },
     });
+
+    // 4. Lógica de Notificación Push
+    const client = bid.job.client;
+    if (client.pushToken) {
+      await sendPushNotification(
+        client.pushToken,
+        "¡Nueva propuesta recibida! 🛠️",
+        `${workerUser.name} se postuló para "${bid.job.title}" por $${price}`,
+        { jobId: bid.jobId, type: "NEW_BID" }, // Datos extra para navegación
+      );
+    }
 
     res.status(201).json({ message: "Postulación enviada con éxito", bid });
   } catch (error) {

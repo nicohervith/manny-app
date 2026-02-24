@@ -1,9 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import axios from "axios";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,8 +15,10 @@ import {
 import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import { JobCard } from "../../src/components/jobCard";
 import { API_URL } from "../../src/constants/Config";
-import { ApplyBidModal } from "../worker/ApplyBidModal";
 import { useAuth } from "../../src/context/AuthContext";
+
+import api from "../../src/services/api";
+import ApplyBidModal from "../../src/components/ApplyBidModal";
 
 export default function WorkerFeedScreen() {
   const { user } = useAuth();
@@ -71,7 +71,7 @@ export default function WorkerFeedScreen() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/jobs/available`);
+      const response = await api.get("/api/jobs/available");
       setJobs(response.data);
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -81,49 +81,49 @@ export default function WorkerFeedScreen() {
     }
   };
 
-const handlePressApply = async (job: any) => {
-  try {
-    const res = await axios.get(`${API_URL}/api/worker/status/${user.id}`);
-    const { verification } = res.data;
+  const handlePressApply = async (job: any) => {
+    try {
+      const res = await api.get(`${API_URL}/api/worker/status/${user.id}`);
+      const { verification } = res.data;
 
-    if (verification !== "VERIFIED") {
-      Alert.alert(
-        "Verificación Requerida",
-        `Tu cuenta está en estado: ${verification}`,
-        [
-          { text: "Cerrar" },
-          {
-            text: "Ver mi Perfil",
-            onPress: () => router.push("/worker/complete-profile"),
-          },
-        ],
-      );
-      return;
+      if (verification !== "VERIFIED") {
+        Alert.alert(
+          "Verificación Requerida",
+          `Tu cuenta está en estado: ${verification}`,
+          [
+            { text: "Cerrar" },
+            {
+              text: "Ver mi Perfil",
+              onPress: () => router.push("/worker/complete-profile"),
+            },
+          ],
+        );
+        return;
+      }
+
+      setSelectedJob(job);
+      setModalVisible(true);
+    } catch (e) {
+      Alert.alert("Error", "No pudimos validar tu perfil.");
     }
+  };
 
-    setSelectedJob(job);
-    setModalVisible(true);
-  } catch (e) {
-    Alert.alert("Error", "No pudimos validar tu perfil.");
-  }
-};
+  const handleApplyAction = async (data: any) => {
+    try {
+      await api.post(`${API_URL}/api/bids/apply`, {
+        jobId: selectedJob.id,
+        workerId: user.id,
+        message: data.message,
+        price: data.price,
+        estimatedMin: data.tiempo,
+      });
 
-const handleApplyAction = async (data: any) => {
-  try {
-    await axios.post(`${API_URL}/api/bids/apply`, {
-      jobId: selectedJob.id,
-      workerId: user.id,
-      message: data.message,
-      price: data.price,
-      estimatedMin: data.tiempo,
-    });
-
-    Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada.");
-    setModalVisible(false);
-  } catch (error) {
-    Alert.alert("Error", "No se pudo enviar la propuesta.");
-  }
-};
+      Alert.alert("¡Enviado!", "Tu propuesta ha sido enviada.");
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", "No se pudo enviar la propuesta.");
+    }
+  };
 
   const filteredJobs = jobs.filter((item) => {
     if (!location || !item.latitude || !item.longitude) return true;
