@@ -28,7 +28,6 @@ export default function TabLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // 2. REGISTRO DE PUSH TOKEN Y UNIÓN A SALAS
   useEffect(() => {
     if (!user) return;
 
@@ -110,10 +109,21 @@ export default function TabLayout() {
     };
   }, [pathname]);
 
-  // Si no hay usuario cargado aún, no mostramos los tabs
+  useEffect(() => {
+    if (!user) return;
+    const role = user.role;
+
+    if (role === "WORKER" && pathname === "/") {
+      router.replace("/worker-feed");
+    }
+    if (role === "CLIENT" && pathname === "/worker-feed") {
+      router.replace("/");
+    }
+  }, [user, pathname]);
+
   if (!user) return null;
 
-  const role = user.role;
+    const role = user.role;
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
@@ -122,19 +132,20 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Profesionales",
-          href: role === "CLIENT" ? "/" : (null as any),
+          // Si es Worker, ocultamos el TAB por completo
+          href: role === "CLIENT" ? "/" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="search" size={24} color={color} />
           ),
         }}
       />
 
-      {/* Vista de trabajos (Solo Trabajador) */}
       <Tabs.Screen
         name="worker-feed"
         options={{
           title: "Trabajos",
-          href: role === "WORKER" ? "/worker-feed" : (null as any),
+          // Si es Client, ocultamos el TAB por completo
+          href: role === "WORKER" ? "/worker-feed" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="hammer" size={24} color={color} />
           ),
@@ -201,7 +212,7 @@ export default function TabLayout() {
         name="verify-workers"
         options={{
           title: "Validar",
-          href: role === "ADMIN" ? "/verify-workers" : null, // Oculta el tab si no es ADMIN
+          href: role === "ADMIN" ? "/verify-workers" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="shield-checkmark" size={24} color={color} />
           ),

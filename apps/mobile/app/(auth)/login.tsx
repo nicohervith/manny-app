@@ -63,7 +63,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mani Oficios Cerca</Text>
+      <Text style={styles.title}>Manny Oficios Cerca</Text>
       <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
       <TextInput
         style={styles.input}
@@ -75,11 +75,11 @@ export default function LoginScreen() {
       />
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.passwordInput} // Estilo ajustado para que no pise el icono
+          style={styles.passwordInput} 
           placeholder="Contraseña"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry={!showPassword} // Si showPassword es false, se oculta
+          secureTextEntry={!showPassword} 
         />
         <TouchableOpacity
           style={styles.eyeIcon}

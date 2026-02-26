@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import * as SecureStore from "expo-secure-store";
 import { useRouter, useSegments } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface AuthContextType {
   user: any;
@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const segments = useSegments();
   const router = useRouter();
 
-  // 1. Cargar datos al iniciar
   useEffect(() => {
     const loadStorageData = async () => {
       try {
@@ -35,34 +34,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadStorageData();
   }, []);
 
-  // 2. Lógica de protección de rutas (Redirección automática)
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
-      // No logueado -> Ir a login
       router.replace("/(auth)/login");
     } else if (user && inAuthGroup) {
-      // Ya logueado e intenta entrar a login -> Ir a la App
-      // Redirigir según el rol si fuera necesario
-      router.replace("/(tabs)/worker-feed");
+      if (user.role === "WORKER") {
+        router.replace("/(tabs)/worker-feed");
+      } else {
+        router.replace("/(tabs)");
+      }
     }
   }, [user, segments, isLoading]);
 
-  // 3. Función para actualizar datos (como el Avatar)
   const updateUser = async (newData: any) => {
     try {
-      const updatedUser = { ...user, ...newData };
-      setUser(updatedUser);
-      await SecureStore.setItemAsync("userData", JSON.stringify(updatedUser));
+      setUser((prevUser: any) => {
+        if (!prevUser) return null;
+        const updated = { ...prevUser, ...newData };
+        // Guardar en storage asincrónicamente
+        SecureStore.setItemAsync("userData", JSON.stringify(updated));
+        return updated;
+      });
     } catch (e) {
       console.error("Error updating user context", e);
     }
   };
 
-  // 4. Función de Logout
   const logout = async () => {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");

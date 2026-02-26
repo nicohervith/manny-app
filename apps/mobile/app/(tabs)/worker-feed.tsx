@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Location from "expo-location";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,8 +17,8 @@ import { JobCard } from "../../src/components/jobCard";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
 
-import api from "../../src/services/api";
 import ApplyBidModal from "../../src/components/ApplyBidModal";
+import api from "../../src/services/api";
 
 export default function WorkerFeedScreen() {
   const { user } = useAuth();
@@ -150,7 +150,6 @@ export default function WorkerFeedScreen() {
   };
 
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>

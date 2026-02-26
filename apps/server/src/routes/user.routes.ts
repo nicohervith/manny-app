@@ -55,8 +55,18 @@ router.patch("/update-push-token/:userId", async (req, res) => {
   }
 });
 
-// En user.routes.ts
-// apps/server/src/routes/user.routes.ts
+router.patch("/update-push-token", async (req, res) => {
+  const { userId, token } = req.body;
+  try {
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { pushToken: token },
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Error actualizando push token" });
+  }
+});
 
 router.post("/send-code", authenticateToken, async (req: any, res) => {
   // Cambiamos 'id' por 'userId' que es lo que viene en el token
@@ -109,6 +119,14 @@ router.post("/verify-otp", authenticateToken, async (req: any, res) => {
   } catch (error) {
     res.status(500).json({ error: "Error de servidor" });
   }
+});
+
+router.post("/ping/:userId", async (req, res) => {
+  await prisma.user.update({
+    where: { id: parseInt(req.params.userId) },
+    data: { lastSeen: new Date() },
+  });
+  res.sendStatus(200);
 });
 
 export default router;

@@ -1,15 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
   Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import axios from "axios";
-import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../../src/constants/Config";
 
 export default function WorkerProfileDetail() {
@@ -38,10 +38,36 @@ export default function WorkerProfileDetail() {
       {/* Header con degradado visual */}
       <View style={styles.header}>
         <View style={styles.avatarPlaceholder}>
-          <Ionicons name="person" size={60} color="#fff" />
+          {worker?.user?.avatar ? (
+            <Image
+              source={{ uri: worker.user.avatar }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={60} color="#fff" />
+          )}
         </View>
-        <Text style={styles.name}>{worker?.user?.name}</Text>
-        <Text style={styles.occupation}>{worker?.occupation}</Text>
+
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{worker?.user?.name}</Text>
+
+          {/* BADGE DE VERIFICACIÓN - Ahora usamos las nuevas propiedades del JSON */}
+          {worker?.emailVerified && worker?.isApproved && (
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color="#007AFF"
+              style={{ marginLeft: 5, marginTop: 4 }}
+            />
+          )}
+        </View>
+
+        {/* Etiqueta debajo */}
+        {worker?.emailVerified && worker?.isApproved && (
+          <View style={styles.verifiedTag}>
+            <Text style={styles.verifiedTagText}>Perfil Verificado</Text>
+          </View>
+        )}
       </View>
 
       {/* Info Grid: Rating y Precio */}
@@ -169,4 +195,30 @@ const styles = StyleSheet.create({
   reviewComment: { fontSize: 14, color: "#666", fontStyle: "italic" },
   reviewDate: { fontSize: 11, color: "#BBB", marginTop: 8, textAlign: "right" },
   noReviews: { color: "#999", textAlign: "center", marginTop: 10 },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  verifiedTag: {
+    backgroundColor: "#E3F2FD",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#BBDEFB",
+  },
+  verifiedTagText: {
+    color: "#1976D2",
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
 });

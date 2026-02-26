@@ -18,7 +18,7 @@ model User {
   phone     String?
   role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
-
+  lastSeen  DateTime @default(now())
   profile      WorkerProfile?
   jobsAsClient Job[]          @relation("ClientJobs")
   jobsAsWorker Job[]          @relation("WorkerJobs")
@@ -99,6 +99,14 @@ model WorkerProfile {
   mercadopagoId     String?  @unique // ID de usuario de MP
   workerAccessToken String?  // Token de acceso del worker (para crear la preferencia)
   workerRefreshToken String? // Para renovar el token cuando expire
+
+  tags        Tag[]    @relation("WorkerTags")
+}
+
+model Tag {
+  id      Int             @id @default(autoincrement())
+  name    String          @unique // Ej: "Plomería", "Gasista"
+  workers WorkerProfile[] @relation("WorkerTags")
 }
 
 model Bid {

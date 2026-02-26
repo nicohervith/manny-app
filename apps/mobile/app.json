@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "find-job",
-    "slug": "find-job",
+    "name": "manny-oficios-cerca",
+    "slug": "manny-oficios-cerca",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "findjob",
+    "scheme": "manny-oficios-cerca",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -25,7 +25,7 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "findjob",
+              "scheme": "manny-oficios-cerca",
               "host": "checkout",
               "pathPrefix": "/congrats"
             }
