@@ -7,7 +7,7 @@ export default function LandingScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mani Oficios Cerca</Text>
+        <Text style={styles.title}>Manny Oficios Cerca</Text>
         <Text style={styles.subtitle}>
           Tu próximo trabajo (o trabajador) está a un click.
         </Text>

@@ -36,16 +36,30 @@ router.post(
         latitude,
         longitude,
         hourlyRate,
+        tags, // <--- Recibimos el string JSON de los tags
       } = req.body;
 
       if (!userId)
         return res.status(400).json({ error: "El userId es obligatorio" });
 
-      // Verificación de seguridad para req.files
+      // 1. Procesar los tags de JSON string a Array de objetos para Prisma
+      let tagsData: { where: { name: string }; create: { name: string } }[] =
+        [];
+      if (tags) {
+        try {
+          const parsedTags = JSON.parse(tags) as string[];
+          tagsData = parsedTags.map((tagName) => ({
+            where: { name: tagName },
+            create: { name: tagName },
+          }));
+        } catch (e) {
+          console.error("Error parsing tags:", e);
+        }
+      }
+
       const files = req.files as
         | { [fieldname: string]: Express.Multer.File[] }
         | undefined;
-
       const dniFrontUrl = files?.["dniFront"]?.[0]?.path || null;
       const dniBackUrl = files?.["dniBack"]?.[0]?.path || null;
       const selfieUrl = files?.["selfie"]?.[0]?.path || null;
@@ -63,6 +77,11 @@ router.post(
           ...(dniBackUrl && { dniBack: dniBackUrl }),
           ...(selfieUrl && { selfie: selfieUrl }),
           verification: "PENDING",
+          // ACTUALIZAR TAGS: Limpiamos los anteriores y conectamos los nuevos
+          tags: {
+            set: [], // Esto limpia la relación previa para que no se acumulen
+            connectOrCreate: tagsData,
+          },
         },
         create: {
           userId: parseInt(userId),
@@ -76,6 +95,10 @@ router.post(
           dniBack: dniBackUrl,
           selfie: selfieUrl,
           verification: "PENDING",
+          // CREAR CON TAGS
+          tags: {
+            connectOrCreate: tagsData,
+          },
         },
       });
 
@@ -97,12 +120,28 @@ router.post(
 // Agregar este GET a tu archivo de rutas de worker
 router.get("/list", async (req, res) => {
   try {
+    // Obtenemos el tag de los query params (ej: /list?tag=Plomería)
+    const { tag } = req.query;
+
     const workers = await prisma.workerProfile.findMany({
+      where: tag
+        ? {
+            tags: {
+              some: {
+                name: tag as string,
+              },
+            },
+          }
+        : {}, // Si no hay tag, trae a todos
       include: {
+        tags: true, // IMPORTANTE: Incluir los tags para verlos en la Card
         user: {
           select: {
+            id: true,
             name: true,
             email: true,
+            avatar: true, // Añadimos avatar
+            lastSeen: true, // IMPORTANTE: Para el punto verde de "Online"
           },
         },
       },
@@ -110,6 +149,7 @@ router.get("/list", async (req, res) => {
 
     res.json(workers);
   } catch (error) {
+    console.error("Error fetching workers:", error);
     res.status(500).json({ error: "Error fetching workers" });
   }
 });
@@ -121,14 +161,17 @@ router.get("/profile/:userId", async (req, res) => {
     const profile = await prisma.workerProfile.findUnique({
       where: { userId: parseInt(req.params.userId) },
       include: {
+        tags: true, 
         user: {
           select: {
             name: true,
+            avatar: true,
+            emailVerified: true,
             receivedReviews: {
               include: {
-                reviewer: { select: { name: true } }, // Para saber quién comentó
+                reviewer: { select: { name: true } },
               },
-              orderBy: { createdAt: "desc" }, // Más recientes primero
+              orderBy: { createdAt: "desc" },
             },
           },
         },
@@ -145,11 +188,15 @@ router.get("/profile/:userId", async (req, res) => {
 
     res.json({
       ...profile,
+      emailVerified: profile.user.emailVerified === true,
+      isApproved: profile.verification === "VERIFIED",
       averageRating: averageRating.toFixed(1),
       totalReviews: reviews.length,
-      reviews: reviews, // Enviamos la lista completa al front
+      reviews: reviews,
+      // Los tags ya van incluidos dentro de '...profile'
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -190,7 +237,7 @@ router.patch("/verify-worker/:userId", async (req, res) => {
 router.get("/status/:userId", async (req, res) => {
   const profile = await prisma.workerProfile.findUnique({
     where: { userId: parseInt(req.params.userId) },
-    select: { verification: true }
+    select: { verification: true },
   });
   res.json({ verification: profile?.verification || "NONE" });
 });

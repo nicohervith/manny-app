@@ -20,6 +20,7 @@ import {
 import MapView, { Marker } from "react-native-maps";
 import { API_URL } from "../../src/constants/Config";
 import api from "../../src/services/api";
+import { AVAILABLE_TAGS } from "../../src/constants/Categories";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function CompleteProfileScreen() {
     hourlyRate: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    tags: [] as string[],
   });
 
   const [images, setImages] = useState({
@@ -52,6 +54,26 @@ export default function CompleteProfileScreen() {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+
+  const [manualAddress, setManualAddress] = useState("");
+
+  const searchManualAddress = async () => {
+    if (!manualAddress) return;
+    setLoadingLocation(true);
+    try {
+      let result = await Location.geocodeAsync(manualAddress);
+      if (result.length > 0) {
+        const { latitude, longitude } = result[0];
+        updateLocationState(latitude, longitude);
+      } else {
+        Alert.alert("No encontrado", "No pudimos hallar esa dirección.");
+      }
+    } catch (e) {
+      Alert.alert("Error", "Ocurrió un error al buscar la dirección.");
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -82,6 +104,8 @@ export default function CompleteProfileScreen() {
           hourlyRate: p.hourlyRate ? p.hourlyRate.toString() : "",
           latitude: p.latitude,
           longitude: p.longitude,
+          tags: p.tags ? p.tags.map((t: any) => t.name) : [],
+          
         });
 
         // Cargar URLs existentes si el backend las devuelve
@@ -104,6 +128,19 @@ export default function CompleteProfileScreen() {
       console.log("Perfil nuevo o no encontrado");
       setIsEditing(false);
     }
+  };
+
+  const toggleTag = (tagName: string) => {
+    setForm((prev) => {
+      const isSelected = prev.tags.includes(tagName);
+      if (isSelected) {
+        // Si ya está, lo quitamos
+        return { ...prev, tags: prev.tags.filter((t) => t !== tagName) };
+      } else {
+        // Si no está, lo agregamos
+        return { ...prev, tags: [...prev.tags, tagName] };
+      }
+    });
   };
 
   const pickImage = async (key: keyof typeof images) => {
@@ -152,6 +189,33 @@ export default function CompleteProfileScreen() {
     setLoadingLocation(false);
   };
 
+  const handleMapPress = async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    updateLocationState(latitude, longitude);
+  };
+
+  // Función auxiliar para centralizar la actualización
+  const updateLocationState = async (lat: number, lng: number) => {
+    setForm({ ...form, latitude: lat, longitude: lng });
+    setRegion({ ...region, latitude: lat, longitude: lng });
+
+    // Obtener la dirección escrita para feedback visual
+    try {
+      let reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lng,
+      });
+      if (reverseGeocode.length > 0) {
+        const item = reverseGeocode[0];
+        setAddress(
+          `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
+        );
+      }
+    } catch (e) {
+      setAddress("Dirección personalizada");
+    }
+  };
+
   const handlePressVerify = async () => {
     try {
       await api.post("/api/users/send-code");
@@ -191,6 +255,7 @@ export default function CompleteProfileScreen() {
       formData.append("hourlyRate", form.hourlyRate);
       formData.append("latitude", form.latitude.toString());
       formData.append("longitude", form.longitude.toString());
+      formData.append("tags", JSON.stringify(form.tags));
 
       // Solo adjuntar si son URIs locales (nuevas fotos)
       const appendIfLocal = (uri: string | null, fieldName: string) => {
@@ -297,7 +362,7 @@ export default function CompleteProfileScreen() {
         onChangeText={(t) => setForm({ ...form, occupation: t })}
       />
 
-      <Text style={styles.label}>Precio por Hora (USD)</Text>
+      <Text style={styles.label}>Precio por Hora (ARS)</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
@@ -322,34 +387,94 @@ export default function CompleteProfileScreen() {
         onChangeText={(t) => setForm({ ...form, description: t })}
       />
 
+      <Text style={styles.label}>Mis Especialidades (Tags)</Text>
+      <Text style={styles.subLabel}>
+        Selecciona todas las que apliquen a tu trabajo
+      </Text>
+
+      <View style={styles.tagsContainer}>
+        {AVAILABLE_TAGS.map((tag) => {
+          const isSelected = form.tags.includes(tag);
+          return (
+            <TouchableOpacity
+              key={tag}
+              onPress={() => toggleTag(tag)}
+              style={[styles.tagChip, isSelected && styles.tagChipSelected]}
+            >
+              <Text
+                style={[
+                  styles.tagChipText,
+                  isSelected && styles.tagChipTextSelected,
+                ]}
+              >
+                {tag}
+              </Text>
+              {isSelected && (
+                <Ionicons
+                  name="close-circle"
+                  size={14}
+                  color="#fff"
+                  style={{ marginLeft: 4 }}
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {/* Ubicación */}
       <Text style={styles.label}>Ubicación de Trabajo</Text>
+
+      <View style={styles.searchSection}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+          placeholder="Escribe tu dirección (ej: Av. 7 1234, La Plata)"
+          value={manualAddress}
+          onChangeText={setManualAddress}
+        />
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={searchManualAddress}
+        >
+          <Ionicons name="search" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.locationContainer}>
         {form.latitude ? (
-          <MapView style={styles.map} region={region}>
-            <Marker
-              coordinate={{
-                latitude: form.latitude,
-                longitude: form.longitude!,
-              }}
-            />
+          <MapView
+            style={styles.map}
+            region={region}
+            onPress={handleMapPress} // <--- Permite tocar el mapa
+          >
+            {form.latitude && form.longitude && (
+              <Marker
+                draggable // <--- También permite arrastrar el marcador
+                onDragEnd={handleMapPress}
+                coordinate={{
+                  latitude: form.latitude,
+                  longitude: form.longitude,
+                }}
+                title="Tu ubicación de trabajo"
+              />
+            )}
           </MapView>
         ) : (
           <View style={styles.mapPlaceholder}>
             <Text>Sin ubicación</Text>
           </View>
         )}
-        <TouchableOpacity
-          style={styles.locationButton}
-          onPress={getLocation}
-          disabled={loadingLocation}
-        >
-          {loadingLocation ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.whiteText}>Fijar Ubicación Actual</Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.locationButtonsRow}>
+          <TouchableOpacity
+            style={[styles.locationButton, { flex: 1, marginRight: 5 }]}
+            onPress={getLocation}
+            disabled={loadingLocation}
+          >
+            <Ionicons name="location" size={18} color="#fff" />
+            <Text style={styles.whiteText}> Usar GPS actual</Text>
+          </TouchableOpacity>
+
+          {/* Botón opcional para limpiar o buscar */}
+        </View>
         <Text style={styles.addressText}>{address}</Text>
       </View>
 
@@ -488,16 +613,16 @@ const styles = StyleSheet.create({
   },
   imageBox: {
     alignItems: "center",
-    width: "32%", 
+    width: "32%",
   },
   imagePicker: {
     width: "100%",
-    height: 100, 
+    height: 100,
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#CCC",
-    borderStyle: "dashed", 
+    borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -547,6 +672,71 @@ const styles = StyleSheet.create({
   verifyButtonText: {
     color: "#fff",
     fontSize: 13,
+    fontWeight: "bold",
+  },
+  locationButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  /*  locationButtonsRow: {
+    flexDirection: "row",
+    marginTop: 10,
+    marginBottom: 5,
+  }, */
+  searchSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  searchButton: {
+    backgroundColor: "#4A90E2",
+    padding: 15,
+    borderRadius: 10,
+    marginLeft: 10,
+    justifyContent: "center",
+  },
+  /* addressText: {
+    fontSize: 13,
+    color: "#666",
+    backgroundColor: "#f9f9f9",
+    padding: 10,
+    borderRadius: 8,
+    fontStyle: "italic",
+  }, */
+  subLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+    marginTop: -8,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  tagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F0F0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  tagChipSelected: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+  },
+  tagChipText: {
+    fontSize: 14,
+    color: "#444",
+  },
+  tagChipTextSelected: {
+    color: "#FFF",
     fontWeight: "bold",
   },
 });
