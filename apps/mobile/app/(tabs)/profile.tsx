@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
 import {
@@ -44,26 +43,27 @@ export default function ProfileScreen() {
   };
 
   const handleUploadAvatar = async (uri: string) => {
+    if (!user?.id) return; // Seguridad
     setUploading(true);
     try {
       const formData = new FormData();
       const fileName = uri.split("/").pop();
       const fileType = fileName?.split(".").pop();
 
-      // @ts-ignore
       formData.append("avatar", {
         uri: Platform.OS === "android" ? uri : uri.replace("file://", ""),
         name: `avatar_${user.id}.${fileType}`,
         type: `image/${fileType}`,
-      });
+      } as any);
 
       const response = await axios.patch(
         `${API_URL}/api/users/update-avatar/${user.id}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-      updateUser({ avatar: response.data.user.avatar });
 
+      // El contexto se encarga de actualizar SecureStore
+      updateUser({ avatar: response.data.user.avatar });
       alert("Foto de perfil actualizada.");
     } catch (error) {
       console.error(error);
@@ -74,22 +74,19 @@ export default function ProfileScreen() {
   };
 
   const handleLinkMercadoPago = async () => {
+    if (!user?.id) return;
     try {
-      const userData = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userData || "{}");
-
+      // USAMOS EL USER DEL CONTEXTO, NO SECURESTORE
       const response = await axios.get(
         `${API_URL}/api/payments/auth/url/${user.id}`,
       );
 
-      // IMPORTANTE: El segundo parámetro debe coincidir con tu app config (app.json)
       const result = await WebBrowser.openAuthSessionAsync(
         response.data.url,
         "findjob://profile",
       );
 
       if (result.type === "success") {
-        // Aquí podrías recargar los datos del usuario para verificar si ya está conectado
         alert("Proceso de vinculación finalizado.");
       }
     } catch (error) {
@@ -101,6 +98,14 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await logout();
   };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

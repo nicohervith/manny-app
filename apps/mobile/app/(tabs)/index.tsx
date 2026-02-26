@@ -21,16 +21,29 @@ export default function ClientHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchWorkers = async () => {
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const fetchWorkers = async (tag?: string) => {
     try {
-      const response = await axios.get(`${API_URL}/api/worker/list`);
+      setLoading(true);
+      // Si hay tag, lo pasamos como query param
+      const url = tag
+        ? `${API_URL}/api/worker/list?tag=${tag}`
+        : `${API_URL}/api/worker/list`;
+
+      const response = await axios.get(url);
       setWorkers(response.data);
     } catch (error: any) {
-      console.error("Error al obtener trabajadores:", error.message);
+      console.error("Error:", error.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
+  };
+
+  // Al presionar una categoría en el Grid
+  const handleSelectCategory = (categoryName: string) => {
+    setSelectedTag(categoryName);
+    fetchWorkers(categoryName);
   };
 
   useEffect(() => {
@@ -78,9 +91,30 @@ export default function ClientHomeScreen() {
             <CategoryGrid
               onSelectCategory={(name) => {
                 console.log("Filtrar por:", name);
-                // Aquí podrías filtrar la lista de workers o navegar a una búsqueda
+                handleSelectCategory(name);
               }}
             />
+
+            {selectedTag && (
+              <View style={styles.filterBadgeContainer}>
+                <Text style={styles.filterText}>
+                  Mostrando:{" "}
+                  <Text style={{ fontWeight: "bold" }}>{selectedTag}</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedTag(null);
+                    fetchWorkers(); // Carga todos de nuevo
+                  }}
+                  style={styles.clearFilterBtn}
+                >
+                  <Ionicons name="close-circle" size={20} color="#FF3B30" />
+                  <Text style={{ color: "#FF3B30", marginLeft: 4 }}>
+                    Quitar filtro
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <View style={styles.divider} />
             <Text style={styles.sectionTitle}>Profesionales recomendados</Text>
@@ -202,4 +236,31 @@ const styles = StyleSheet.create({
   categoryText: { fontSize: 13, fontWeight: "500", color: "#444" },
 
   divider: { height: 1, backgroundColor: "#EEE", marginVertical: 10 },
+  filterBadgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F2F2F7", // Un gris muy claro/azulado
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  filterText: {
+    fontSize: 15,
+    color: "#3A3A3C",
+    flex: 1,
+  },
+  clearFilterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFE5E5", // Fondo rojizo suave para el botón
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
 });

@@ -109,24 +109,21 @@ export default function TabLayout() {
     };
   }, [pathname]);
 
-  // Si no hay usuario cargado aún, no mostramos los tabs
-  if (!user) return null;
-
-  const role = user.role;
-
   useEffect(() => {
     if (!user) return;
+    const role = user.role;
 
-    // Si es WORKER y está en el "index" (que es para clientes), lo mandamos a su feed
     if (role === "WORKER" && pathname === "/") {
       router.replace("/worker-feed");
     }
-
-    // Si es CLIENT y de alguna forma termina en "worker-feed", lo mandamos al index
     if (role === "CLIENT" && pathname === "/worker-feed") {
       router.replace("/");
     }
-  }, [role, pathname]);
+  }, [user, pathname]);
+
+  if (!user) return null;
+
+    const role = user.role;
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>

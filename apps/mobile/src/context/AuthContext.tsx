@@ -52,9 +52,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = async (newData: any) => {
     try {
-      const updatedUser = { ...user, ...newData };
-      setUser(updatedUser);
-      await SecureStore.setItemAsync("userData", JSON.stringify(updatedUser));
+      setUser((prevUser: any) => {
+        if (!prevUser) return null;
+        const updated = { ...prevUser, ...newData };
+        // Guardar en storage asincrónicamente
+        SecureStore.setItemAsync("userData", JSON.stringify(updated));
+        return updated;
+      });
     } catch (e) {
       console.error("Error updating user context", e);
     }

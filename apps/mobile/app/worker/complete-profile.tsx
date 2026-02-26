@@ -20,6 +20,7 @@ import {
 import MapView, { Marker } from "react-native-maps";
 import { API_URL } from "../../src/constants/Config";
 import api from "../../src/services/api";
+import { AVAILABLE_TAGS } from "../../src/constants/Categories";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function CompleteProfileScreen() {
     hourlyRate: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    tags: [] as string[],
   });
 
   const [images, setImages] = useState({
@@ -102,6 +104,8 @@ export default function CompleteProfileScreen() {
           hourlyRate: p.hourlyRate ? p.hourlyRate.toString() : "",
           latitude: p.latitude,
           longitude: p.longitude,
+          tags: p.tags ? p.tags.map((t: any) => t.name) : [],
+          
         });
 
         // Cargar URLs existentes si el backend las devuelve
@@ -124,6 +128,19 @@ export default function CompleteProfileScreen() {
       console.log("Perfil nuevo o no encontrado");
       setIsEditing(false);
     }
+  };
+
+  const toggleTag = (tagName: string) => {
+    setForm((prev) => {
+      const isSelected = prev.tags.includes(tagName);
+      if (isSelected) {
+        // Si ya está, lo quitamos
+        return { ...prev, tags: prev.tags.filter((t) => t !== tagName) };
+      } else {
+        // Si no está, lo agregamos
+        return { ...prev, tags: [...prev.tags, tagName] };
+      }
+    });
   };
 
   const pickImage = async (key: keyof typeof images) => {
@@ -238,6 +255,7 @@ export default function CompleteProfileScreen() {
       formData.append("hourlyRate", form.hourlyRate);
       formData.append("latitude", form.latitude.toString());
       formData.append("longitude", form.longitude.toString());
+      formData.append("tags", JSON.stringify(form.tags));
 
       // Solo adjuntar si son URIs locales (nuevas fotos)
       const appendIfLocal = (uri: string | null, fieldName: string) => {
@@ -368,6 +386,41 @@ export default function CompleteProfileScreen() {
         value={form.description}
         onChangeText={(t) => setForm({ ...form, description: t })}
       />
+
+      <Text style={styles.label}>Mis Especialidades (Tags)</Text>
+      <Text style={styles.subLabel}>
+        Selecciona todas las que apliquen a tu trabajo
+      </Text>
+
+      <View style={styles.tagsContainer}>
+        {AVAILABLE_TAGS.map((tag) => {
+          const isSelected = form.tags.includes(tag);
+          return (
+            <TouchableOpacity
+              key={tag}
+              onPress={() => toggleTag(tag)}
+              style={[styles.tagChip, isSelected && styles.tagChipSelected]}
+            >
+              <Text
+                style={[
+                  styles.tagChipText,
+                  isSelected && styles.tagChipTextSelected,
+                ]}
+              >
+                {tag}
+              </Text>
+              {isSelected && (
+                <Ionicons
+                  name="close-circle"
+                  size={14}
+                  color="#fff"
+                  style={{ marginLeft: 4 }}
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       {/* Ubicación */}
       <Text style={styles.label}>Ubicación de Trabajo</Text>
@@ -626,7 +679,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 10,
   },
- /*  locationButtonsRow: {
+  /*  locationButtonsRow: {
     flexDirection: "row",
     marginTop: 10,
     marginBottom: 5,
@@ -651,4 +704,39 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontStyle: "italic",
   }, */
+  subLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 8,
+    marginTop: -8,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  tagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F0F0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  tagChipSelected: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+  },
+  tagChipText: {
+    fontSize: 14,
+    color: "#444",
+  },
+  tagChipTextSelected: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
 });

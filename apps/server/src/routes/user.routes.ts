@@ -121,4 +121,12 @@ router.post("/verify-otp", authenticateToken, async (req: any, res) => {
   }
 });
 
+router.post("/ping/:userId", async (req, res) => {
+  await prisma.user.update({
+    where: { id: parseInt(req.params.userId) },
+    data: { lastSeen: new Date() },
+  });
+  res.sendStatus(200);
+});
+
 export default router;

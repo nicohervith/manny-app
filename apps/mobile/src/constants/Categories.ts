@@ -42,3 +42,18 @@ export const CATEGORIES = [
     iconColor: "#689F38",
   },
 ];
+
+export const AVAILABLE_TAGS = [
+  "Plomería",
+  "Electricidad",
+  "Limpieza",
+  "Pintura",
+  "Construcción",
+  "Jardinería",
+  "Gasista",
+  "Carpintería",
+  "Climatización",
+  "Fletes",
+  "Techista",
+  "Cerrajería",
+];
