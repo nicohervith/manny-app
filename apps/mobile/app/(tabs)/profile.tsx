@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -99,7 +99,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    await logout(); 
+    await logout();
   };
 
   return (
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       <Text style={styles.userName}>{user?.name || "Cargando..."}</Text>
-      <Text style={styles.title}>Mi Cuenta</Text>
+      {/*   <Text style={styles.title}>Mi Cuenta</Text> */}
 
       {role === "WORKER" && (
         <>
@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginTop: 10,
+    marginBottom: 10,
     color: "#333",
   },
 });

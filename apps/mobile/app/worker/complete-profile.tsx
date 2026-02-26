@@ -344,7 +344,7 @@ export default function CompleteProfileScreen() {
         onChangeText={(t) => setForm({ ...form, occupation: t })}
       />
 
-      <Text style={styles.label}>Precio por Hora (USD)</Text>
+      <Text style={styles.label}>Precio por Hora (ARS)</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"

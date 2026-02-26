@@ -80,7 +80,7 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
           style={styles.applyButton}
           onPress={() => onApply(item)}
         >
-          <Text style={styles.applyButtonText}>Apply Now</Text>
+          <Text style={styles.applyButtonText}>Aplicar</Text>
         </TouchableOpacity>
       </View>
       {/* COMPONENTE LIGHTBOX */}
@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
   },
-  // NUEVOS ESTILOS PARA IMÁGENES
   imageScroll: {
     marginVertical: 10,
   },
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
     marginRight: 10,
-    backgroundColor: "#F0F0F0", // Color de carga mientras descarga la imagen
+    backgroundColor: "#F0F0F0", 
   },
   description: { color: "#555", marginBottom: 10, lineHeight: 20 },
   footer: {

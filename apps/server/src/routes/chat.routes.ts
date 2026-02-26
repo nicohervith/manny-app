@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { sendPushNotification } from "../services/notification.service.js";
 
 const router = Router();
 
@@ -9,18 +10,53 @@ router.post("/send", async (req, res) => {
 
     const message = await prisma.message.create({
       data: {
-        jobId: parseInt(jobId), 
+        jobId: parseInt(jobId),
         senderId: parseInt(senderId),
         content,
       },
-      include: { sender: { select: { name: true } } },
+      include: {
+        sender: { select: { name: true } },
+        job: {
+          include: {
+            client: { select: { id: true, pushToken: true } },
+            worker: { select: { id: true, pushToken: true } }, // 'worker' ya es un User
+          },
+        },
+      },
     });
 
-    const io = req.app.get("io");
-    io.to(`chat_${jobId}`).emit("new-message", message);
+    // Casteamos a 'any' para evitar que TS se queje de las relaciones incluidas
+    const fullMessage = message as any;
 
-    res.json(message);
+    // 1. Emitir por Socket.io
+    const io = req.app.get("io");
+    io.to(`chat_${jobId}`).emit("new-message", fullMessage);
+
+    // 2. Lógica de Notificación Push
+    const job = fullMessage.job;
+    let targetToken = null;
+
+    // Si el que envía es el Cliente (clientId), el destino es el Worker
+    if (job.clientId === parseInt(senderId)) {
+      targetToken = job.worker?.pushToken;
+    } else {
+      // Si el que envía es el Worker (u otro), el destino es el Cliente
+      targetToken = job.client?.pushToken;
+    }
+
+    if (targetToken) {
+      console.log(`Enviando Push a token: ${targetToken}`);
+      await sendPushNotification(
+        targetToken,
+        fullMessage.sender.name, // "Nicolas"
+        content, // "Hola, estoy llegando"
+        { jobId: jobId.toString(), type: "CHAT" },
+      );
+    }
+
+    res.json(fullMessage);
   } catch (error) {
+    console.error("Error en /send:", error);
     res.status(500).json({ error: "Error sending message" });
   }
 });
@@ -85,7 +121,7 @@ router.get("/list/:userId", async (req, res) => {
     });
     res.json(chats);
   } catch (error) {
-    console.error(error); 
+    console.error(error);
     res.status(500).json({ error: "Error al obtener lista de chats" });
   }
 });

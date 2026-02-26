@@ -47,24 +47,21 @@ router.post("/create-preference", async (req, res) => {
         marketplace_fee: commission,
         external_reference: jobId.toString(),
 
-        // --- AQUÍ VA LA CONFIGURACIÓN DE RETORNO ---
         back_urls: {
-          // Cambiamos 'myapp' por tu esquema real 'findjob'
           success: "findjob://checkout/congrats",
           failure: "findjob://checkout/congrats",
           pending: "findjob://checkout/congrats",
         },
-        auto_return: "approved", // Esto hace que el navegador se cierre solo y vuelva a tu app
+        auto_return: "approved", 
         // ------------------------------------------
 
         notification_url:
-          "https://f017-181-116-89-120.ngrok-free.app/api/payments/webhook",
+          "https://dcc3-181-116-89-120.ngrok-free.app/api/payments/webhook",
       },
     });
 
     res.json({ id: result.id });
   } catch (error: any) {
-    // Esto nos dirá exactamente qué campo no le gusta a Mercado Pago
     console.error(
       "Detalle del error de MP:",
       error.response?.data || error.message,

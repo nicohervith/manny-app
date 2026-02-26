@@ -28,7 +28,6 @@ export default function TabLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // 2. REGISTRO DE PUSH TOKEN Y UNIÓN A SALAS
   useEffect(() => {
     if (!user) return;
 
@@ -115,6 +114,20 @@ export default function TabLayout() {
 
   const role = user.role;
 
+  useEffect(() => {
+    if (!user) return;
+
+    // Si es WORKER y está en el "index" (que es para clientes), lo mandamos a su feed
+    if (role === "WORKER" && pathname === "/") {
+      router.replace("/worker-feed");
+    }
+
+    // Si es CLIENT y de alguna forma termina en "worker-feed", lo mandamos al index
+    if (role === "CLIENT" && pathname === "/worker-feed") {
+      router.replace("/");
+    }
+  }, [role, pathname]);
+
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
       {/* Vista de profesionales (Solo Cliente) */}
@@ -122,19 +135,20 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Profesionales",
-          href: role === "CLIENT" ? "/" : (null as any),
+          // Si es Worker, ocultamos el TAB por completo
+          href: role === "CLIENT" ? "/" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="search" size={24} color={color} />
           ),
         }}
       />
 
-      {/* Vista de trabajos (Solo Trabajador) */}
       <Tabs.Screen
         name="worker-feed"
         options={{
           title: "Trabajos",
-          href: role === "WORKER" ? "/worker-feed" : (null as any),
+          // Si es Client, ocultamos el TAB por completo
+          href: role === "WORKER" ? "/worker-feed" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="hammer" size={24} color={color} />
           ),
@@ -201,7 +215,7 @@ export default function TabLayout() {
         name="verify-workers"
         options={{
           title: "Validar",
-          href: role === "ADMIN" ? "/verify-workers" : null, // Oculta el tab si no es ADMIN
+          href: role === "ADMIN" ? "/verify-workers" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="shield-checkmark" size={24} color={color} />
           ),
