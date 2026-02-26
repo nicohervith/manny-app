@@ -1,5 +1,5 @@
 {
-  "name": "find-job",
+  "name": "manny-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
