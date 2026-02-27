@@ -30,7 +30,10 @@
               "pathPrefix": "/congrats"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "package": "com.nicolashervith.findjob",
@@ -64,7 +67,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "dbf1dcd6-09ef-42fc-b98c-cda99fa652ea"
+        "projectId": "6cb6f075-c825-4157-b8bf-27f02ee84fd6"
       }
     },
     "owner": "nicolashervith"

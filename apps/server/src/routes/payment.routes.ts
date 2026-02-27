@@ -32,6 +32,7 @@ router.post("/create-preference", async (req, res) => {
     });
 
     const preference = new Preference(workerClient);
+    const notificationUrl = `${process.env.SERVER_URL}/api/payments/webhook`;
 
     const result = await preference.create({
       body: {
@@ -52,11 +53,8 @@ router.post("/create-preference", async (req, res) => {
           failure: "findjob://checkout/congrats",
           pending: "findjob://checkout/congrats",
         },
-        auto_return: "approved", 
-        // ------------------------------------------
-
-        notification_url:
-          "https://dcc3-181-116-89-120.ngrok-free.app/api/payments/webhook",
+        auto_return: "approved",
+        notification_url: notificationUrl,
       },
     });
 
