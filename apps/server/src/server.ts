@@ -1,17 +1,17 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import bidRoutes from "./routes/bid.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import jobRoutes from "./routes/job.routes.js";
-import workerRoutes from "./routes/worker.routes.js";
-import reviewRoutes from "./routes/reviews.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
+import reviewRoutes from "./routes/reviews.routes.js";
 import userRoutes from "./routes/user.routes.js";
-import { createServer } from "http";
-import { Server } from "socket.io";
+import workerRoutes from "./routes/worker.routes.js";
 
 dotenv.config();
 
@@ -69,16 +69,17 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 
-
 // Ruta de prueba
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Servidor FindJob funcionando" });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Servidor abierto en red local`);
-  console.log(`🔗 Local: http://localhost:${PORT}`);
-  console.log(`🔗 Emulador: http://10.0.2.2:${PORT}`);
+app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`🔗 Local: http://localhost:${PORT}`);
+    console.log(`🔗 Emulador: http://10.0.2.2:${PORT}`);
+  }
 });
