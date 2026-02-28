@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: "#fff",
     flexGrow: 1,
-    paddingTop: 60,
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,

@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-    paddingTop: 40,
+    paddingTop: 20,
   },
   card: {
     backgroundColor: "#fff",

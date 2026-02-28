@@ -18,9 +18,9 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import { AVAILABLE_TAGS } from "../../src/constants/Categories";
 import { API_URL } from "../../src/constants/Config";
 import api from "../../src/services/api";
-import { AVAILABLE_TAGS } from "../../src/constants/Categories";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
@@ -105,7 +105,6 @@ export default function CompleteProfileScreen() {
           latitude: p.latitude,
           longitude: p.longitude,
           tags: p.tags ? p.tags.map((t: any) => t.name) : [],
-          
         });
 
         // Cargar URLs existentes si el backend las devuelve
@@ -163,30 +162,51 @@ export default function CompleteProfileScreen() {
 
   const getLocation = async () => {
     setLoadingLocation(true);
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Necesitamos tu ubicación.");
-      setLoadingLocation(false);
-      return;
-    }
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permiso denegado",
+          "Ve a ajustes para permitir la ubicación.",
+        );
+        return;
+      }
 
-    let location = await Location.getCurrentPositionAsync({});
-    const { latitude, longitude } = location.coords;
+      // Agregamos un timeout y precisión balanceada para evitar bloqueos
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced, // Menos exigente que High
+      });
 
-    setForm({ ...form, latitude, longitude });
-    setRegion({ ...region, latitude, longitude });
+      const { latitude, longitude } = location.coords;
 
-    let reverseGeocode = await Location.reverseGeocodeAsync({
-      latitude,
-      longitude,
-    });
-    if (reverseGeocode.length > 0) {
-      const item = reverseGeocode[0];
-      setAddress(
-        `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
+      // IMPORTANTE: Actualizar usando el spread del form actual
+      setForm((prev) => ({ ...prev, latitude, longitude }));
+      setRegion((prev) => ({ ...prev, latitude, longitude }));
+
+      // El reverse geocode también puede fallar si no hay internet
+      try {
+        let reverseGeocode = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
+        if (reverseGeocode && reverseGeocode.length > 0) {
+          const item = reverseGeocode[0];
+          setAddress(
+            `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
+          );
+        }
+      } catch (error) {
+        setAddress("Ubicación fijada (dirección no disponible)");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert(
+        "Error de GPS",
+        "No pudimos obtener tu ubicación. Asegúrate de tener el GPS encendido.",
       );
+    } finally {
+      setLoadingLocation(false);
     }
-    setLoadingLocation(false);
   };
 
   const handleMapPress = async (e: any) => {
