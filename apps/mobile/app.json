@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "manny-oficios-cerca",
+    "name": "Manny Oficios Cerca",
     "slug": "manny-oficios-cerca",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "manny-oficios-cerca",
@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,13 +31,10 @@
               "pathPrefix": "/congrats"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
-      "package": "com.nicolashervith.findjob",
+      "package": "com.manny.oficioscerca",
       "googleServicesFile": "./google-services.json"
     },
     "web": {

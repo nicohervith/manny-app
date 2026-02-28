@@ -123,8 +123,6 @@ router.get("/auth/url/:workerId", (req, res) => {
   const { workerId } = req.params;
   const clientId = process.env.MP_CLIENT_ID;
 
-  // USAR LA VARIABLE DEL .ENV
-  // No olvides el encodeURIComponent para que los símbolos no rompan la URL
   const redirectUri = encodeURIComponent(process.env.MP_REDIRECT_URI || "");
 
   const url = `https://auth.mercadopago.com.ar/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${workerId}&redirect_uri=${redirectUri}`;

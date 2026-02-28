@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -20,6 +21,7 @@ export default function RegisterScreen() {
     role: "CLIENT", // Valor por defecto
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
@@ -68,12 +70,25 @@ export default function RegisterScreen() {
         onChangeText={(text) => setForm({ ...form, email: text })}
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        onChangeText={(text) => setForm({ ...form, password: text })}
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Contraseña"
+          value={form.password}
+          onChangeText={(text) => setForm({ ...form, password: text })}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeIcon}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Ionicons
+            name={showPassword ? "eye-off" : "eye"}
+            size={24}
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.label}>¿Qué buscas hacer?</Text>
       <View style={styles.roleContainer}>
@@ -158,4 +173,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#eee",
+    position: "relative",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 15,
+    paddingRight: 50,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 15,
+    height: "100%",
+    justifyContent: "center",
+  },
 });
