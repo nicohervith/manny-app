@@ -198,12 +198,10 @@ export default function CompleteProfileScreen() {
       } catch (error) {
         setAddress("Ubicación fijada (dirección no disponible)");
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert(
-        "Error de GPS",
-        "No pudimos obtener tu ubicación. Asegúrate de tener el GPS encendido.",
-      );
+    } catch (error: any) {
+      console.error("Location error code:", error.code);
+      console.error("Location error message:", error.message);
+      Alert.alert("Error de GPS", `Código: ${error.code} - ${error.message}`);
     } finally {
       setLoadingLocation(false);
     }
@@ -216,8 +214,8 @@ export default function CompleteProfileScreen() {
 
   // Función auxiliar para centralizar la actualización
   const updateLocationState = async (lat: number, lng: number) => {
-    setForm({ ...form, latitude: lat, longitude: lng });
-    setRegion({ ...region, latitude: lat, longitude: lng });
+    setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+    setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
 
     // Obtener la dirección escrita para feedback visual
     try {
