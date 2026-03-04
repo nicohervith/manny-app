@@ -23,7 +23,8 @@
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.1",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -35,7 +36,6 @@
     "@types/nodemailer": "^7.0.11",
     "prisma": "^6.3.1",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.7.3"
+    "tsx": "^4.21.0"
   }
 }
