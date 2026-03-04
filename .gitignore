@@ -47,4 +47,6 @@ app-example
 /apps/server/node_modules
 
 /apps/mobile/expo-env.d.ts
+/apps/mobile/.env
+/apps/mobile/app.json
 anotaciones.txt
