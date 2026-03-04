@@ -1,0 +1,19 @@
+-- AlterTable
+ALTER TABLE `job` MODIFY `status` ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'PAID', 'DISPUTED') NOT NULL DEFAULT 'PENDING';
+
+-- CreateTable
+CREATE TABLE `Dispute` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `jobId` INTEGER NOT NULL,
+    `reason` TEXT NOT NULL,
+    `status` ENUM('OPEN', 'RESOLVED', 'CANCELLED') NOT NULL DEFAULT 'OPEN',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `resolvedAt` DATETIME(3) NULL,
+    `resolution` TEXT NULL,
+
+    UNIQUE INDEX `Dispute_jobId_key`(`jobId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Dispute` ADD CONSTRAINT `Dispute_jobId_fkey` FOREIGN KEY (`jobId`) REFERENCES `Job`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

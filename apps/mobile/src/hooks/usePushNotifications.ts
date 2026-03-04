@@ -32,7 +32,11 @@ export const registerForPushNotificationsAsync = async () => {
     }
 
     // El projectID se saca de app.json (extra.eas.projectId)
-    token = (await Notifications.getExpoPushTokenAsync()).data;
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId,
+      })
+    ).data;
   } else {
     console.log("Debes usar un dispositivo físico para notificaciones push");
   }

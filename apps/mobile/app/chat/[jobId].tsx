@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import * as WebBrowser from "expo-web-browser"; // IMPORTANTE
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,7 +19,7 @@ import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
 
 const socket = io(API_URL.replace("/api", ""), {
-  transports: ["websocket"], 
+  transports: ["websocket"],
 });
 
 export default function ChatScreen() {
@@ -96,7 +95,7 @@ export default function ChatScreen() {
       }
       const res = await axios.get(`${API_URL}/api/chat/${jobId}`);
       setMessages(res.data.messages || res.data);
-      setJob(res.data.job || res.data); 
+      setJob(res.data.job || res.data);
 
       socket.emit("join-chat", jobId);
       setLoading(false);
@@ -164,9 +163,7 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      // El offset es vital: es la altura de tu Header + un margen
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header Personalizado (Opcional si usas Stack) */}
       <View style={styles.header}>

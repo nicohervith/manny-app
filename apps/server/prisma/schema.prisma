@@ -56,6 +56,7 @@ model Job {
 
   // CAMPO AÑADIDO PARA LA REVIEW:
   review Review? // Un trabajo puede tener una reseña
+  dispute Dispute?
 }
 
 model Review {
@@ -146,6 +147,7 @@ enum JobStatus {
   COMPLETED
   CANCELLED
   PAID
+  DISPUTED
 }
 
 enum BidStatus {
@@ -186,4 +188,21 @@ enum VerificationStatus {
   PENDING    // Subió los documentos, esperando que el Admin apruebe
   VERIFIED   // Todo ok, puede postularse
   REJECTED   // Los documentos no eran legibles o eran falsos
+}
+
+model Dispute {
+  id          Int      @id @default(autoincrement())
+  jobId       Int      @unique
+  job         Job      @relation(fields: [jobId], references: [id])
+  reason      String   @db.Text
+  status      DisputeStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  resolution  String?  @db.Text
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+  CANCELLED
 }

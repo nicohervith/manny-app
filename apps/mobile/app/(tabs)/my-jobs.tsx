@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,6 +15,8 @@ import {
   View,
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
+import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 export default function MyJobsScreen() {
   const router = useRouter();
@@ -25,17 +25,55 @@ export default function MyJobsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [payingId, setPayingId] = useState<number | null>(null);
 
+  const { user } = useAuth();
   // Estados para el Modal de Reseña
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
+  // Agregá estos estados junto a los otros useState del componente:
+  const [disputeModalVisible, setDisputeModalVisible] = useState(false);
+  const [disputeJob, setDisputeJob] = useState<any>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [submittingDispute, setSubmittingDispute] = useState(false);
+
+  const handleDispute = (job: any) => {
+    setDisputeJob(job);
+    setDisputeModalVisible(true);
+  };
+
+  const submitDispute = async () => {
+    if (!disputeReason.trim()) {
+      Alert.alert("Atención", "Por favor describí el problema.");
+      return;
+    }
+
+    setSubmittingDispute(true);
+    try {
+      await api.post(`${API_URL}/api/disputes`, {
+        jobId: disputeJob.id,
+        reason: disputeReason,
+      });
+
+      Alert.alert(
+        "Reporte enviado",
+        "Revisaremos tu caso a la brevedad. El trabajo quedará pausado hasta resolverlo.",
+      );
+      setDisputeModalVisible(false);
+      setDisputeReason("");
+      setDisputeJob(null);
+      fetchMyJobs(); // Refrescamos para mostrar el nuevo estado DISPUTED
+    } catch (error) {
+      Alert.alert("Error", "No se pudo enviar el reporte. Intentá de nuevo.");
+    } finally {
+      setSubmittingDispute(false);
+    }
+  };
+
   const fetchMyJobs = async () => {
     try {
-      const userData = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userData || "{}");
-      const res = await axios.get(`${API_URL}/api/jobs/client/${user.id}`);
+      const res = await api.get(`/api/jobs/client/${user.id}`);
       setMyJobs(res.data);
     } catch (e) {
       console.error("Error fetching jobs:", e);
@@ -63,7 +101,7 @@ export default function MyJobsScreen() {
 
     setPayingId(job.id);
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${API_URL}/api/payments/create-preference`,
         {
           jobId: job.id,
@@ -95,7 +133,7 @@ export default function MyJobsScreen() {
     }
 
     try {
-      await axios.post(`${API_URL}/api/reviews`, {
+      await api.post(`${API_URL}/api/reviews`, {
         jobId: selectedJob.id,
         workerId: selectedJob.workerId,
         reviewerId: selectedJob.clientId,
@@ -158,6 +196,18 @@ export default function MyJobsScreen() {
                   >
                     <Ionicons name="chatbubbles" size={18} color="#fff" />
                     <Text style={styles.buttonTextSmall}>Chat</Text>
+                  </TouchableOpacity>
+                )}
+
+                {(isInProgress || isCompleted) && !item.dispute && (
+                  <TouchableOpacity
+                    style={styles.disputeButton}
+                    onPress={() => handleDispute(item)}
+                  >
+                    <Ionicons name="warning" size={18} color="#fff" />
+                    <Text style={styles.buttonTextSmall}>
+                      Reportar problema
+                    </Text>
                   </TouchableOpacity>
                 )}
 
@@ -274,6 +324,49 @@ export default function MyJobsScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={disputeModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeModal}
+              onPress={() => {
+                setDisputeModalVisible(false);
+                setDisputeReason("");
+              }}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+
+            <Ionicons name="warning" size={40} color="#DC3545" />
+            <Text style={styles.modalTitle}>Reportar un problema</Text>
+            <Text style={styles.modalSubtitle}>
+              Describí qué salió mal con este trabajo
+            </Text>
+
+            <TextInput
+              style={styles.reviewInput}
+              placeholder="Ej: El trabajador no se presentó, el trabajo quedó incompleto..."
+              multiline
+              numberOfLines={4}
+              onChangeText={setDisputeReason}
+              value={disputeReason}
+            />
+
+            <TouchableOpacity
+              style={styles.disputeConfirmButton}
+              onPress={submitDispute}
+              disabled={submittingDispute}
+            >
+              {submittingDispute ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Enviar Reporte</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -288,6 +381,8 @@ const getStatusStyle = (status: string) => {
       return { backgroundColor: "#FFFBEB" }; // Amarillo suave para "esperando pago"
     case "PAID":
       return { backgroundColor: "#E8F5E9" }; // Verde para pagado
+    case "DISPUTED":
+      return { backgroundColor: "#FDECEA" };
     default:
       return { backgroundColor: "#F5F5F5" };
   }
@@ -416,5 +511,21 @@ const styles = StyleSheet.create({
     color: "#888",
     marginTop: 50,
     fontSize: 16,
+  },
+  disputeButton: {
+    backgroundColor: "#DC3545",
+    flexDirection: "row",
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  disputeConfirmButton: {
+    backgroundColor: "#DC3545",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
   },
 });

@@ -1,15 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
-import { useFocusEffect, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,309 +9,34 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { IdentityImages } from "../../src/components/worker/IdentityImages";
+import { LocationPicker } from "../../src/components/worker/LocationPicker";
 import { AVAILABLE_TAGS } from "../../src/constants/Categories";
-import { API_URL } from "../../src/constants/Config";
-import api from "../../src/services/api";
+import { useCompleteProfile } from "../../src/hooks/useCompleteProfile";
+import { EmailVerificationBanner } from "../../src/components/worker/EmailVerificationBanner";
 
 export default function CompleteProfileScreen() {
-  const router = useRouter();
-  const [loadingLocation, setLoadingLocation] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-
-  const [form, setForm] = useState({
-    occupation: "",
-    dni: "",
-    description: "",
-    hourlyRate: "",
-    latitude: null as number | null,
-    longitude: null as number | null,
-    tags: [] as string[],
-  });
-
-  const [images, setImages] = useState({
-    dniFront: null as string | null,
-    dniBack: null as string | null,
-    selfie: null as string | null,
-  });
-
-  const [address, setAddress] = useState("Ubicación no establecida");
-  const [region, setRegion] = useState({
-    latitude: -34.6037,
-    longitude: -58.3816,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
-
-  const [manualAddress, setManualAddress] = useState("");
-
-  const searchManualAddress = async () => {
-    if (!manualAddress) return;
-    setLoadingLocation(true);
-    try {
-      let result = await Location.geocodeAsync(manualAddress);
-      if (result.length > 0) {
-        const { latitude, longitude } = result[0];
-        updateLocationState(latitude, longitude);
-      } else {
-        Alert.alert("No encontrado", "No pudimos hallar esa dirección.");
-      }
-    } catch (e) {
-      Alert.alert("Error", "Ocurrió un error al buscar la dirección.");
-    } finally {
-      setLoadingLocation(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadExistingProfile();
-    }, []),
-  );
-
-  const loadExistingProfile = async () => {
-    try {
-      const userDataRaw = await SecureStore.getItemAsync("userData");
-      const user = userDataRaw ? JSON.parse(userDataRaw) : null;
-
-      if (!user) return;
-
-      // IMPORTANTE: Seteamos el email que viene del login/contexto
-      setUserEmail(user.email);
-      setIsEmailVerified(user.emailVerified || false);
-
-      // Luego sigues con la carga del perfil profesional...
-      const res = await api.get(`/api/worker/profile/${user.id}`);
-      if (res.data) {
-        const p = res.data;
-        setIsEditing(true);
-        setForm({
-          occupation: p.occupation || "",
-          dni: p.dni || "",
-          description: p.description || "",
-          hourlyRate: p.hourlyRate ? p.hourlyRate.toString() : "",
-          latitude: p.latitude,
-          longitude: p.longitude,
-          tags: p.tags ? p.tags.map((t: any) => t.name) : [],
-        });
-
-        // Cargar URLs existentes si el backend las devuelve
-        setImages({
-          dniFront: p.dniFront || null,
-          dniBack: p.dniBack || null,
-          selfie: p.selfie || null,
-        });
-
-        if (p.latitude && p.longitude) {
-          setRegion((prev) => ({
-            ...prev,
-            latitude: p.latitude,
-            longitude: p.longitude,
-          }));
-          setAddress("Ubicación guardada anteriormente");
-        }
-      }
-    } catch (e) {
-      console.log("Perfil nuevo o no encontrado");
-      setIsEditing(false);
-    }
-  };
-
-  const toggleTag = (tagName: string) => {
-    setForm((prev) => {
-      const isSelected = prev.tags.includes(tagName);
-      if (isSelected) {
-        // Si ya está, lo quitamos
-        return { ...prev, tags: prev.tags.filter((t) => t !== tagName) };
-      } else {
-        // Si no está, lo agregamos
-        return { ...prev, tags: [...prev.tags, tagName] };
-      }
-    });
-  };
-
-  const pickImage = async (key: keyof typeof images) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a tus fotos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.5, // Comprimimos para subir más rápido
-    });
-
-    if (!result.canceled) {
-      setImages({ ...images, [key]: result.assets[0].uri });
-    }
-  };
-
-  const getLocation = async () => {
-    setLoadingLocation(true);
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permiso denegado",
-          "Ve a ajustes para permitir la ubicación.",
-        );
-        return;
-      }
-
-      // Agregamos un timeout y precisión balanceada para evitar bloqueos
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced, // Menos exigente que High
-      });
-
-      const { latitude, longitude } = location.coords;
-
-      // IMPORTANTE: Actualizar usando el spread del form actual
-      setForm((prev) => ({ ...prev, latitude, longitude }));
-      setRegion((prev) => ({ ...prev, latitude, longitude }));
-
-      // El reverse geocode también puede fallar si no hay internet
-      try {
-        let reverseGeocode = await Location.reverseGeocodeAsync({
-          latitude,
-          longitude,
-        });
-        if (reverseGeocode && reverseGeocode.length > 0) {
-          const item = reverseGeocode[0];
-          setAddress(
-            `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
-          );
-        }
-      } catch (error) {
-        setAddress("Ubicación fijada (dirección no disponible)");
-      }
-    } catch (error: any) {
-      console.error("Location error code:", error.code);
-      console.error("Location error message:", error.message);
-      Alert.alert("Error de GPS", `Código: ${error.code} - ${error.message}`);
-    } finally {
-      setLoadingLocation(false);
-    }
-  };
-
-  const handleMapPress = async (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    updateLocationState(latitude, longitude);
-  };
-
-  // Función auxiliar para centralizar la actualización
-  const updateLocationState = async (lat: number, lng: number) => {
-    setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
-    setRegion((prev) => ({ ...prev, latitude: lat, longitude: lng }));
-
-    // Obtener la dirección escrita para feedback visual
-    try {
-      let reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude: lat,
-        longitude: lng,
-      });
-      if (reverseGeocode.length > 0) {
-        const item = reverseGeocode[0];
-        setAddress(
-          `${item.street || "Calle"} ${item.name || ""}, ${item.city || ""}`,
-        );
-      }
-    } catch (e) {
-      setAddress("Dirección personalizada");
-    }
-  };
-
-  const handlePressVerify = async () => {
-    try {
-      await api.post("/api/users/send-code");
-      router.push("/verify-email" as any);
-    } catch (error) {
-      Alert.alert("Error", "No pudimos enviar el código.");
-    }
-  };
-
-  const saveProfile = async () => {
-    setLoading(true);
-    try {
-      const userDataRaw = await SecureStore.getItemAsync("userData");
-      const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
-
-      if (!form.latitude || !form.hourlyRate || !form.dni) {
-        Alert.alert("Error", "Completa los campos obligatorios y ubicación.");
-        setLoading(false);
-        return;
-      }
-
-      // Validar que tengamos las 3 imágenes (especialmente si es perfil nuevo)
-      if (
-        !isEditing &&
-        (!images.dniFront || !images.dniBack || !images.selfie)
-      ) {
-        Alert.alert("Validación", "Sube las 3 fotos de identidad.");
-        setLoading(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("userId", userData.id.toString());
-      formData.append("occupation", form.occupation);
-      formData.append("dni", form.dni);
-      formData.append("description", form.description);
-      formData.append("hourlyRate", form.hourlyRate);
-      formData.append("latitude", form.latitude.toString());
-      formData.append("longitude", form.longitude.toString());
-      formData.append("tags", JSON.stringify(form.tags));
-
-      // Solo adjuntar si son URIs locales (nuevas fotos)
-      const appendIfLocal = (uri: string | null, fieldName: string) => {
-        if (uri && !uri.startsWith("http")) {
-          // Cambiamos la condición
-          const filename = uri.split("/").pop();
-          const match = /\.(\w+)$/.exec(filename || "");
-          const type = match ? `image/${match[1]}` : `image/jpeg`;
-
-          const cleanUri =
-            Platform.OS === "android" ? uri : uri.replace("file://", "");
-
-          formData.append(fieldName, {
-            uri: uri, // Mantén el uri original primero
-            name: filename || `photo_${fieldName}.jpg`,
-            type: type,
-          } as any);
-        }
-      };
-
-      appendIfLocal(images.dniFront, "dniFront");
-      appendIfLocal(images.dniBack, "dniBack");
-      appendIfLocal(images.selfie, "selfie");
-
-      await axios.post(`${API_URL}/api/worker/complete-profile`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      Alert.alert("Éxito", "Perfil enviado a revisión.");
-      router.replace("/(tabs)/worker-feed");
-    } catch (error: any) {
-      if (error.response) {
-        // El servidor respondió con un código de error (400, 500, etc)
-        console.error("Data:", error.response.data);
-        console.error("Status:", error.response.status);
-      } else if (error.request) {
-        // La petición se hizo pero no hubo respuesta (Error de Red real)
-        console.error("Request error (No response):", error.request);
-      } else {
-        console.error("Error mensaje:", error.message);
-      }
-      Alert.alert("Error", "Error de red o servidor no alcanzado.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    form,
+    setForm,
+    images,
+    region,
+    address,
+    manualAddress,
+    setManualAddress,
+    loading,
+    loadingLocation,
+    isEditing,
+    isEmailVerified,
+    userEmail,
+    toggleTag,
+    pickImage,
+    getLocation,
+    handleMapPress,
+    searchManualAddress,
+    handlePressVerify,
+    saveProfile,
+  } = useCompleteProfile();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -329,55 +46,18 @@ export default function CompleteProfileScreen() {
           : "Completar Perfil Profesional"}
       </Text>
 
-      {/* Sección de Validación de Email */}
-      <View
-        style={[
-          styles.verificationBanner,
-          isEmailVerified && {
-            backgroundColor: "#E8F5E9",
-            borderColor: "#C8E6C9",
-          }, // Verde suave
-        ]}
-      >
-        <Ionicons
-          name={isEmailVerified ? "checkmark-circle" : "mail-unread-outline"}
-          size={24}
-          color={isEmailVerified ? "#2E7D32" : "#D32F2F"}
-        />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text
-            style={[
-              styles.verificationTitle,
-              isEmailVerified && { color: "#1B5E20" },
-            ]}
-          >
-            {isEmailVerified ? "Email verificado" : "Verifica tu correo"}
-          </Text>
-          <Text style={styles.verificationSub}>
-            {isEmailVerified
-              ? "Tu cuenta está protegida y vinculada a: "
-              : "Enviaremos un código a: "}
-            <Text style={{ fontWeight: "bold" }}>{userEmail}</Text>
-          </Text>
-        </View>
+      <EmailVerificationBanner
+        email={userEmail}
+        isVerified={isEmailVerified}
+        onPressVerify={handlePressVerify}
+      />
 
-        {!isEmailVerified && (
-          <TouchableOpacity
-            style={styles.verifyButton}
-            onPress={handlePressVerify}
-          >
-            <Text style={styles.verifyButtonText}>Verificar</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Inputs Básicos */}
       <Text style={styles.label}>Ocupación</Text>
       <TextInput
         style={styles.input}
         placeholder="Ej: Plomero"
         value={form.occupation}
-        onChangeText={(t) => setForm({ ...form, occupation: t })}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, occupation: t }))}
       />
 
       <Text style={styles.label}>Precio por Hora (ARS)</Text>
@@ -385,7 +65,7 @@ export default function CompleteProfileScreen() {
         style={styles.input}
         keyboardType="numeric"
         value={form.hourlyRate}
-        onChangeText={(t) => setForm({ ...form, hourlyRate: t })}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, hourlyRate: t }))}
       />
 
       <Text style={styles.label}>DNI / Identificación</Text>
@@ -394,7 +74,7 @@ export default function CompleteProfileScreen() {
         keyboardType="numeric"
         editable={!isEditing}
         value={form.dni}
-        onChangeText={(t) => setForm({ ...form, dni: t })}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, dni: t }))}
       />
 
       <Text style={styles.label}>Biografía</Text>
@@ -402,7 +82,7 @@ export default function CompleteProfileScreen() {
         style={[styles.input, styles.textArea]}
         multiline
         value={form.description}
-        onChangeText={(t) => setForm({ ...form, description: t })}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, description: t }))}
       />
 
       <Text style={styles.label}>Mis Especialidades (Tags)</Text>
@@ -440,107 +120,21 @@ export default function CompleteProfileScreen() {
         })}
       </View>
 
-      {/* Ubicación */}
       <Text style={styles.label}>Ubicación de Trabajo</Text>
+      <LocationPicker
+        form={form}
+        region={region}
+        address={address}
+        manualAddress={manualAddress}
+        loadingLocation={loadingLocation}
+        onChangeManualAddress={setManualAddress}
+        onSearchManualAddress={searchManualAddress}
+        onGetLocation={getLocation}
+        onMapPress={handleMapPress}
+      />
 
-      <View style={styles.searchSection}>
-        <TextInput
-          style={[styles.input, { flex: 1, marginBottom: 0 }]}
-          placeholder="Escribe tu dirección (ej: Av. 7 1234, La Plata)"
-          value={manualAddress}
-          onChangeText={setManualAddress}
-        />
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={searchManualAddress}
-        >
-          <Ionicons name="search" size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.locationContainer}>
-        {form.latitude ? (
-          <MapView
-            style={styles.map}
-            region={region}
-            onPress={handleMapPress} // <--- Permite tocar el mapa
-          >
-            {form.latitude && form.longitude && (
-              <Marker
-                draggable // <--- También permite arrastrar el marcador
-                onDragEnd={handleMapPress}
-                coordinate={{
-                  latitude: form.latitude,
-                  longitude: form.longitude,
-                }}
-                title="Tu ubicación de trabajo"
-              />
-            )}
-          </MapView>
-        ) : (
-          <View style={styles.mapPlaceholder}>
-            <Text>Sin ubicación</Text>
-          </View>
-        )}
-        <View style={styles.locationButtonsRow}>
-          <TouchableOpacity
-            style={[styles.locationButton, { flex: 1, marginRight: 5 }]}
-            onPress={getLocation}
-            disabled={loadingLocation}
-          >
-            <Ionicons name="location" size={18} color="#fff" />
-            <Text style={styles.whiteText}> Usar GPS actual</Text>
-          </TouchableOpacity>
-
-          {/* Botón opcional para limpiar o buscar */}
-        </View>
-        <Text style={styles.addressText}>{address}</Text>
-      </View>
-
-      {/* Validación de Identidad - LAS 3 FOTOS */}
-      <Text style={styles.label}>Validación de Identidad (Obligatorio)</Text>
-      <View style={styles.imageGrid}>
-        <View style={styles.imageBox}>
-          <TouchableOpacity
-            style={styles.imagePicker}
-            onPress={() => pickImage("dniFront")}
-          >
-            {images.dniFront ? (
-              <Image source={{ uri: images.dniFront }} style={styles.preview} />
-            ) : (
-              <Ionicons name="card-outline" size={30} color="#666" />
-            )}
-          </TouchableOpacity>
-          <Text style={styles.imageLabel}>Frente DNI</Text>
-        </View>
-
-        <View style={styles.imageBox}>
-          <TouchableOpacity
-            style={styles.imagePicker}
-            onPress={() => pickImage("dniBack")}
-          >
-            {images.dniBack ? (
-              <Image source={{ uri: images.dniBack }} style={styles.preview} />
-            ) : (
-              <Ionicons name="card-outline" size={30} color="#666" />
-            )}
-          </TouchableOpacity>
-          <Text style={styles.imageLabel}>Dorso DNI</Text>
-        </View>
-
-        <View style={styles.imageBox}>
-          <TouchableOpacity
-            style={styles.imagePicker}
-            onPress={() => pickImage("selfie")}
-          >
-            {images.selfie ? (
-              <Image source={{ uri: images.selfie }} style={styles.preview} />
-            ) : (
-              <Ionicons name="camera-outline" size={30} color="#666" />
-            )}
-          </TouchableOpacity>
-          <Text style={styles.imageLabel}>Selfie de Seguridad</Text>
-        </View>
-      </View>
+      <Text style={styles.label}>Validación de Identidad</Text>
+      <IdentityImages images={images} onPickImage={pickImage} />
 
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
@@ -697,11 +291,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 10,
   },
-  /*  locationButtonsRow: {
-    flexDirection: "row",
-    marginTop: 10,
-    marginBottom: 5,
-  }, */
   searchSection: {
     flexDirection: "row",
     alignItems: "center",
@@ -714,14 +303,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     justifyContent: "center",
   },
-  /* addressText: {
-    fontSize: 13,
-    color: "#666",
-    backgroundColor: "#f9f9f9",
-    padding: 10,
-    borderRadius: 8,
-    fontStyle: "italic",
-  }, */
   subLabel: {
     fontSize: 12,
     color: "#666",
