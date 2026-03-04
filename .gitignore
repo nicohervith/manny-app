@@ -5,7 +5,7 @@ node_modules/
 
 # Expo
 .expo/
-dist/
+
 web-build/
 expo-env.d.ts
 
@@ -43,7 +43,7 @@ app-example
 /android
 /apps/server/.env
 /apps/server/expo-env.d.ts
-/apps/server/dist
+
 /apps/server/node_modules
 
 /apps/mobile/expo-env.d.ts
