@@ -4,3 +4,6 @@ buildCommand = "npm install"
 
 [deploy]
 startCommand = "npx prisma migrate deploy && node dist/server.js"
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
