@@ -41,6 +41,10 @@ export const sendMessage = async (req: Request, res: Response) => {
         ? job.worker?.pushToken
         : job.client?.pushToken;
 
+    console.log("=== DEBUG PUSH ===");
+    console.log("senderId:", senderId, "clientId:", job.clientId);
+    console.log("targetToken:", targetToken);
+    console.log("==================");
     if (targetToken) {
       await sendPushNotification(
         targetToken,
