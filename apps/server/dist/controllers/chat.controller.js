@@ -32,6 +32,10 @@ export const sendMessage = async (req, res) => {
         const targetToken = job.clientId === parseInt(senderId)
             ? job.worker?.pushToken
             : job.client?.pushToken;
+        console.log("=== DEBUG PUSH ===");
+        console.log("senderId:", senderId, "clientId:", job.clientId);
+        console.log("targetToken:", targetToken);
+        console.log("==================");
         if (targetToken) {
             await sendPushNotification(targetToken, fullMessage.sender.name, content, { jobId: jobId.toString(), type: "CHAT" });
         }
