@@ -18,13 +18,6 @@ export const WorkerCard = ({ item }: { item: any }) => {
       <View style={styles.infoContainer}>
         <Text style={styles.name}>{item.user.name}</Text>
         {/* LISTADO DE TAGS */}
-        <View style={styles.tagsRow}>
-          {item.tags?.map((tag: any) => (
-            <View key={tag.id} style={styles.tagBadge}>
-              <Text style={styles.tagText}>{tag.name}</Text>
-            </View>
-          ))}
-        </View>
         <View style={styles.tagsContainer}>
           {item.tags?.map((tag: any) => (
             <View key={tag.id} style={styles.tagBadge}>
@@ -42,19 +35,12 @@ export const WorkerCard = ({ item }: { item: any }) => {
             <Text style={styles.reviewsText}>({item.totalReviews || 0})</Text>
           </Text>
         </View>
-        {/* <View style={styles.locationRow}>
-          <Ionicons name="location-outline" size={14} color="#666" />
-          <Text style={styles.locationText}>A 3 km de distancia</Text>
-        </View> */}
       </View>
 
       {/* Lado Derecho: Precio y Acción */}
       <View style={styles.priceContainer}>
         <Text style={styles.price}>${item.hourlyRate || "---"}</Text>
         <Text style={styles.perHour}>/hr</Text>
-        {/* <View style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>Ver</Text>
-        </View> */}
       </View>
     </TouchableOpacity>
   );

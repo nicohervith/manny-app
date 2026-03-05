@@ -77,6 +77,10 @@ export default function TabLayout() {
         if (type === "NEW_BID" && jobId) {
           // @ts-ignore
           router.push(`/(tabs)/my-jobs/${jobId}`);
+
+        }
+        if (type === "JOB_COMPLETED" && jobId) {
+          router.push(`/(tabs)/my-jobs`);
         }
       },
     );

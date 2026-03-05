@@ -51,7 +51,7 @@ export default function MyJobsScreen() {
 
     setSubmittingDispute(true);
     try {
-      await api.post(`${API_URL}/api/disputes`, {
+      await api.post("/api/disputes", {
         jobId: disputeJob.id,
         reason: disputeReason,
       });
@@ -63,7 +63,7 @@ export default function MyJobsScreen() {
       setDisputeModalVisible(false);
       setDisputeReason("");
       setDisputeJob(null);
-      fetchMyJobs(); // Refrescamos para mostrar el nuevo estado DISPUTED
+      fetchMyJobs();
     } catch (error) {
       Alert.alert("Error", "No se pudo enviar el reporte. Intentá de nuevo.");
     } finally {
@@ -152,6 +152,25 @@ export default function MyJobsScreen() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "Buscando profesional";
+      case "IN_PROGRESS":
+        return "En progreso";
+      case "COMPLETED":
+        return "Listo para pagar";
+      case "PAID":
+        return "Pagado";
+      case "CANCELLED":
+        return "Cancelado";
+      case "DISPUTED":
+        return "En disputa";
+      default:
+        return status;
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Mis Pedidos</Text>
@@ -174,7 +193,9 @@ export default function MyJobsScreen() {
               <View style={styles.cardHeader}>
                 <Text style={styles.jobTitle}>{item.title}</Text>
                 <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-                  <Text style={styles.statusText}>{item.status}</Text>
+                  <Text style={styles.statusText}>
+                    {getStatusLabel(item.status)}
+                  </Text>
                 </View>
               </View>
 
@@ -209,6 +230,20 @@ export default function MyJobsScreen() {
                       Reportar problema
                     </Text>
                   </TouchableOpacity>
+                )}
+
+                {isCompleted && (
+                  <View style={styles.completedInfoBanner}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={16}
+                      color="#856404"
+                    />
+                    <Text style={styles.completedInfoText}>
+                      El profesional marcó este trabajo como terminado. Revisá
+                      el trabajo y procedé al pago.
+                    </Text>
+                  </View>
                 )}
 
                 {/* BOTÓN PAGAR: Solo si está COMPLETED */}
@@ -412,39 +447,39 @@ const styles = StyleSheet.create({
   jobDate: { fontSize: 12, color: "#6c757d", marginVertical: 8 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusText: { fontSize: 10, fontWeight: "bold" },
-  buttonContainer: { flexDirection: "row", gap: 10, marginTop: 10 },
+  buttonContainer: { flexDirection: "column", gap: 12, marginTop: 10 },
   chatButton: {
     backgroundColor: "#007AFF",
     flexDirection: "row",
-    padding: 10,
+    padding: 14,
     borderRadius: 8,
-    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
   payButton: {
     backgroundColor: "#28A745",
     flexDirection: "row",
-    padding: 10,
+    padding: 14,
     borderRadius: 8,
-    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
   rateButton: {
     backgroundColor: "#FFC107",
     flexDirection: "row",
-    padding: 10,
+    padding: 14,
     borderRadius: 8,
-    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
   buttonTextSmall: {
     color: "#fff",
     fontWeight: "bold",
-    marginLeft: 5,
-    fontSize: 13,
+    marginLeft: 6,
+    fontSize: 14,
   },
   viewBidsButton: {
     borderWidth: 1,
@@ -515,9 +550,9 @@ const styles = StyleSheet.create({
   disputeButton: {
     backgroundColor: "#DC3545",
     flexDirection: "row",
-    padding: 10,
+    padding: 14,
     borderRadius: 8,
-    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -527,5 +562,21 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
+  },
+  completedInfoBanner: {
+    backgroundColor: "#FFFBEB",
+    borderColor: "#FFC107",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 10,
+  },
+  completedInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#856404",
   },
 });

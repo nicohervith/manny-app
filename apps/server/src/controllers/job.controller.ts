@@ -2,6 +2,7 @@
 
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { sendPushNotification } from "../services/notification.service.js";
 
 // ─────────────────────────────────────────────
 // POST /api/jobs/create
@@ -241,6 +242,7 @@ export const updateJobStatus = async (req: Request, res: Response) => {
     "COMPLETED",
     "PAID",
     "CANCELLED",
+    "DISPUTED",
   ];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
@@ -252,7 +254,26 @@ export const updateJobStatus = async (req: Request, res: Response) => {
     const updatedJob = await prisma.job.update({
       where: { id: parseInt(id) },
       data: { status },
+      include: {
+        client: { select: { pushToken: true, name: true } },
+        worker: { select: { name: true } },
+      },
     });
+
+    // Notificar al cliente cuando el worker marca como COMPLETED
+    if (status === "COMPLETED") {
+      const clientToken = (updatedJob as any).client?.pushToken;
+      const workerName = (updatedJob as any).worker?.name;
+
+      if (clientToken) {
+        await sendPushNotification(
+          clientToken,
+          "Trabajo completado",
+          `${workerName} marcó el trabajo "${updatedJob.title}" como terminado. ¡Confirmá y pagá!`,
+          { jobId: id, type: "JOB_COMPLETED" },
+        );
+      }
+    }
 
     res.json({ message: "Estado actualizado con éxito", job: updatedJob });
   } catch (error) {

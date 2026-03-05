@@ -76,6 +76,29 @@ export default function MyBidsScreen() {
     fetchMyBids(true);
   };
 
+  const getStatusText = (job: any, userId: number) => {
+    if (!job) return "Cargando...";
+
+    switch (job.status) {
+      case "IN_PROGRESS":
+        return job.workerId === userId
+          ? "En progreso"
+          : "Cerrado / No seleccionado";
+      case "COMPLETED":
+        return job.workerId === userId
+          ? "Esperando confirmación del cliente"
+          : "Cerrado / No seleccionado";
+      case "PAID":
+        return "Completado y pagado ✓";
+      case "CANCELLED":
+        return "Cancelado";
+      case "DISPUTED":
+        return "En disputa";
+      default:
+        return "Pendiente";
+    }
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center" }}>
@@ -125,11 +148,14 @@ export default function MyBidsScreen() {
                     <Text style={styles.acceptedText}>¡Oferta Aceptada!</Text>
                   </View>
                 ) : (
-                  <Text style={styles.pendingText}>
-                    Estado:{" "}
-                    {item.job?.status === "OPEN"
-                      ? "Pendiente"
-                      : "Cerrado / No seleccionado"}
+                  <Text
+                    style={[
+                      styles.pendingText,
+                      item.job?.status === "COMPLETED" &&
+                        item.job?.workerId === userId && { color: "#FF9500" },
+                    ]}
+                  >
+                    {getStatusText(item.job, userId!)}
                   </Text>
                 )}
               </View>
@@ -152,24 +178,25 @@ export default function MyBidsScreen() {
               )}
 
               {/* NUEVO: Botón de Finalizar */}
-              {item.job?.status === "IN_PROGRESS" && (
-                <TouchableOpacity
-                  style={[
-                    styles.chatButton,
-                    { backgroundColor: "#28A745", marginTop: 8 },
-                  ]}
-                  onPress={() => handleFinishJob(item.job.id)}
-                >
-                  <Ionicons
-                    name="checkmark-done-circle-outline"
-                    size={20}
-                    color="#fff"
-                  />
-                  <Text style={styles.chatButtonText}>
-                    Marcar como Terminado
-                  </Text>
-                </TouchableOpacity>
-              )}
+              {item.job?.status === "IN_PROGRESS" &&
+                item.job?.workerId === userId && (
+                  <TouchableOpacity
+                    style={[
+                      styles.chatButton,
+                      { backgroundColor: "#28A745", marginTop: 8 },
+                    ]}
+                    onPress={() => handleFinishJob(item.job.id)}
+                  >
+                    <Ionicons
+                      name="checkmark-done-circle-outline"
+                      size={20}
+                      color="#fff"
+                    />
+                    <Text style={styles.chatButtonText}>
+                      Marcar como Terminado
+                    </Text>
+                  </TouchableOpacity>
+                )}
             </View>
           );
         }}
