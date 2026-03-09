@@ -16,11 +16,9 @@ import { API_URL } from "../../src/constants/Config";
 export default function AdminVerifyScreen() {
   const [pending, setPending] = useState([]);
 
-  // apps/mobile/app/admin/verify-workers.tsx
-
   const loadPending = async () => {
     try {
-      const token = await SecureStore.getItemAsync("userToken"); // Recuperamos el token guardado en el Login
+      const token = await SecureStore.getItemAsync("userToken"); 
 
       if (!token) {
         Alert.alert("Error", "No hay sesión activa");
@@ -29,7 +27,7 @@ export default function AdminVerifyScreen() {
 
       const res = await axios.get(`${API_URL}/api/admin/pending-workers`, {
         headers: {
-          Authorization: `Bearer ${token}`, // <--- CLAVE: Enviamos el token aquí
+          Authorization: `Bearer ${token}`, 
         },
       });
       setPending(res.data);
@@ -110,7 +108,7 @@ export default function AdminVerifyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#f4f4f4" },
-  title: { fontSize: 20, fontWeight: "bold", marginBottom: 20, marginTop: 40 },
+  title: { fontSize: 20, fontWeight: "bold", marginBottom: 20, marginTop: 20 },
   card: {
     backgroundColor: "#fff",
     padding: 15,

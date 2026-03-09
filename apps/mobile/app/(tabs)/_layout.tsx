@@ -77,7 +77,6 @@ export default function TabLayout() {
         if (type === "NEW_BID" && jobId) {
           // @ts-ignore
           router.push(`/(tabs)/my-jobs/${jobId}`);
-
         }
         if (type === "JOB_COMPLETED" && jobId) {
           router.push(`/(tabs)/my-jobs`);
@@ -127,7 +126,7 @@ export default function TabLayout() {
 
   if (!user) return null;
 
-    const role = user.role;
+  const role = user.role;
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
@@ -208,6 +207,17 @@ export default function TabLayout() {
           title: "Perfil",
           tabBarIcon: ({ color }) => (
             <Ionicons name="person" size={24} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="disputes"
+        options={{
+          title: "Disputas",
+          href: role === "ADMIN" ? "/disputes" : null,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="warning" size={24} color={color} />
           ),
         }}
       />
