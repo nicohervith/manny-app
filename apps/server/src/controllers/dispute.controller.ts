@@ -35,3 +35,52 @@ export const createDispute = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Error al crear el reporte" });
   }
 };
+
+export const getDisputes = async (req: Request, res: Response) => {
+  try {
+    const disputes = await prisma.dispute.findMany({
+      where: { status: "OPEN" },
+      include: {
+        job: {
+          include: {
+            client: { select: { id: true, name: true } },
+            worker: { select: { id: true, name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(disputes);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener disputes" });
+  }
+};
+
+export const resolveDispute = async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const { resolution, jobStatus } = req.body;
+
+  try {
+    const dispute = await prisma.dispute.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!dispute) {
+      return res.status(404).json({ error: "Dispute no encontrado" });
+    }
+
+    await prisma.dispute.update({
+      where: { id: parseInt(id) },
+      data: { status: "RESOLVED", resolution },
+    });
+
+    await prisma.job.update({
+      where: { id: dispute.jobId },
+      data: { status: jobStatus },
+    });
+
+    res.json({ message: "Dispute resuelto" });
+  } catch (error) {
+    res.status(500).json({ error: "Error al resolver dispute" });
+  }
+};
