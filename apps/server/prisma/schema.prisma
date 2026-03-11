@@ -30,6 +30,8 @@ model User {
   receivedReviews Review[] @relation("ReceivedReviews")
 
   pushToken String?
+  resetToken       String?        // ← AGREGAR
+  resetTokenExpiry DateTime? 
 }
 
 model Job {

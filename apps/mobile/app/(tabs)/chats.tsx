@@ -1,6 +1,4 @@
-import axios from "axios";
 import { useFocusEffect, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState } from "react";
 import {
   FlatList,
@@ -9,32 +7,28 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
+import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 export default function ChatListScreen() {
   const [chats, setChats] = useState([]);
-  const [userId, setUserId] = useState(null);
+  const { user } = useAuth();
   const router = useRouter();
 
   const fetchChats = async () => {
-    const userData = await SecureStore.getItemAsync("userData");
-    if (!userData) return;
-    const user = JSON.parse(userData);
-    setUserId(user.id);
-
+    if (!user) return;
     try {
-      const res = await axios.get(`${API_URL}/api/chat/list/${user.id}`);
+      const res = await api.get(`/api/chat/list/${user.id}`);
       setChats(res.data);
     } catch (e) {
       console.error("Error fetching chats:", e);
     }
   };
 
-  // Reemplaza tu useEffect por este useFocusEffect
   useFocusEffect(
     useCallback(() => {
       fetchChats();
-    }, []),
+    }, [user]),
   );
 
   return (
@@ -46,7 +40,7 @@ export default function ChatListScreen() {
         renderItem={({ item }) => {
           const unreadCount = item._count.messages;
           const otherParty =
-            item.clientId === userId ? item.worker : item.client;
+            item.clientId === user?.id ? item.worker : item.client;
           const lastMsg = item.messages[0];
           const isCompleted = item.status === "COMPLETED";
 
@@ -77,6 +71,13 @@ export default function ChatListScreen() {
                     </View>
                   )}
                 </View>
+
+                <Text style={styles.otherPartyName}>
+                  {item.clientId === user?.id
+                    ? `👷 ${item.worker?.name}`
+                    : `👤 ${item.client?.name}`}
+                </Text>
+
                 <Text style={styles.lastMessage} numberOfLines={1}>
                   {isCompleted && "⚠️ Chat temporal: "}
                   {lastMsg ? lastMsg.content : "No hay mensajes aún"}
@@ -155,5 +156,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "bold",
     color: "#64748B",
+  },
+  otherPartyName: {
+    fontSize: 12,
+    color: "#007AFF",
+    fontWeight: "600",
+    marginBottom: 2,
   },
 });

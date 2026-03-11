@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +15,8 @@ import {
 } from "react-native";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
+import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 const socket = io(API_URL.replace("/api", ""), {
   transports: ["websocket"],
@@ -25,7 +25,8 @@ const socket = io(API_URL.replace("/api", ""), {
 export default function ChatScreen() {
   const { jobId } = useLocalSearchParams();
   const router = useRouter();
-
+  const [otherPartyName, setOtherPartyName] = useState("");
+  const { user } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
@@ -38,24 +39,20 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1. Función para marcar como leído (ahora en el scope correcto)
   const markAsRead = async () => {
     if (!jobId || !userId) return;
     try {
-      await axios.patch(`${API_URL}/api/chat/read-all/${jobId}/${userId}`);
+      await api.patch(`/api/chat/read-all/${jobId}/${userId}`);
     } catch (e) {
       console.error("Error marking as read", e);
     }
   };
-
-  // 2. useEffect para marcar como leído cuando cambian los mensajes
   useEffect(() => {
     if (userId && jobId) {
       markAsRead();
     }
-  }, [userId, messages]); // Se dispara al cargar el usuario o recibir mensajes nuevos
+  }, [userId, messages]);
 
-  // 3. useEffect principal para Sockets y setup inicial
   useEffect(() => {
     setupChat();
 
@@ -87,15 +84,24 @@ export default function ChatScreen() {
 
   const setupChat = async () => {
     try {
-      const data = await SecureStore.getItemAsync("userData");
-      if (data) {
-        const user = JSON.parse(data);
+      if (user) {
         setUserId(user.id);
         setUserName(user.name);
       }
-      const res = await axios.get(`${API_URL}/api/chat/${jobId}`);
-      setMessages(res.data.messages || res.data);
-      setJob(res.data.job || res.data);
+
+      const res = await api.get(`/api/chat/${jobId}`);
+      const jobData = res.data.job;
+      const messages = res.data.messages;
+
+      setMessages(messages || []);
+      setJob(jobData);
+
+      if (user && jobData) {
+        const isClient = jobData.clientId === user.id;
+        setOtherPartyName(
+          isClient ? jobData.worker?.name : jobData.client?.name,
+        );
+      }
 
       socket.emit("join-chat", jobId);
       setLoading(false);
@@ -107,11 +113,8 @@ export default function ChatScreen() {
 
   const handleInputChange = (text: string) => {
     setNewMessage(text);
-
-    // Emitir evento "typing"
     socket.emit("typing", { jobId, userName });
 
-    // Lógica para detener el indicador después de 2 segundos de inactividad
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("stop-typing", jobId);
@@ -121,24 +124,20 @@ export default function ChatScreen() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !userId) return;
 
-    const temporaryId = Date.now(); // ID temporal para la FlatList
+    const temporaryId = Date.now();
     const content = newMessage.trim();
 
-    // 1. Objeto del mensaje local (Optimistic UI)
     const localMessage = {
       id: temporaryId,
       content: content,
       senderId: userId,
       createdAt: new Date().toISOString(),
     };
-
-    // 2. Pintar en pantalla inmediatamente
     setMessages((prev) => [...prev, localMessage]);
     setNewMessage("");
 
     try {
-      // 3. Enviar al servidor
-      await axios.post(`${API_URL}/api/chat/send`, {
+      await api.post(`/api/chat/send`, {
         jobId,
         senderId: userId,
         content: content,
@@ -147,7 +146,6 @@ export default function ChatScreen() {
       socket.emit("stop-typing", jobId);
     } catch (e) {
       console.error("Error sending message:", e);
-      // Opcional: Podrías quitar el mensaje de la lista si falla el envío
       Alert.alert("Error", "No se pudo enviar el mensaje.");
     }
   };
@@ -163,14 +161,15 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.select({ ios: 0, android: 80 })}
     >
       {/* Header Personalizado (Opcional si usas Stack) */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chat del Trabajo</Text>
+        <Text style={styles.headerTitle}>{otherPartyName || "Chat"}</Text>
         <View style={{ width: 24 }} />
       </View>
 

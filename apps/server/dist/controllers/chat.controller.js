@@ -52,12 +52,21 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
     try {
         const jobId = parseInt(req.params.jobId);
-        const messages = await prisma.message.findMany({
-            where: { jobId },
-            orderBy: { createdAt: "asc" },
-            include: { sender: { select: { name: true } } },
-        });
-        res.json(messages);
+        const [messages, job] = await Promise.all([
+            prisma.message.findMany({
+                where: { jobId },
+                orderBy: { createdAt: "asc" },
+                include: { sender: { select: { name: true } } },
+            }),
+            prisma.job.findUnique({
+                where: { id: jobId },
+                include: {
+                    client: { select: { id: true, name: true } },
+                    worker: { select: { id: true, name: true } },
+                },
+            }),
+        ]);
+        res.json({ messages, job });
     }
     catch (error) {
         console.error("Error en getMessages:", error);

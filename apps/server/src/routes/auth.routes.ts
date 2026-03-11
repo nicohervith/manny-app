@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { login, register } from "../controllers/auth.controller.js";
 import {
   forgotPassword,
+  login,
+  register,
   resetPassword,
-} from "../middlewares/auth.middleware.js";
+} from "../controllers/auth.controller.js";
 
 const router = Router();
 

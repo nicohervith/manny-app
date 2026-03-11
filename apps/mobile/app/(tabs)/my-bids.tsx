@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { useFocusEffect, useRouter } from "expo-router"; // 1. Agregamos useFocusEffect
-import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,23 +11,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
+import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 export default function MyBidsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [myBids, setMyBids] = useState([]);
-  const [loading, setLoading] = useState(true); // Nuevo: estado de carga inicial
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
 
   const fetchMyBids = async (isRefresh = false) => {
+    if (!user) return;
     if (!isRefresh) setLoading(true);
     try {
-      const userData = await SecureStore.getItemAsync("userData");
-      const user = JSON.parse(userData || "{}");
-      setUserId(user.id);
-
-      const res = await axios.get(`${API_URL}/api/bids/worker/${user.id}`);
+      const res = await api.get(`/api/bids/worker/${user.id}`);
       setMyBids(res.data);
     } catch (e) {
       console.error("Error fetching bids:", e);
@@ -38,6 +34,12 @@ export default function MyBidsScreen() {
       setRefreshing(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyBids();
+    }, [user]),
+  );
 
   const handleFinishJob = async (jobId: number) => {
     Alert.alert(
@@ -50,7 +52,7 @@ export default function MyBidsScreen() {
           onPress: async () => {
             try {
               // Esta URL ahora coincide con el router.patch("/:id/status") de jobs.routes
-              await axios.patch(`${API_URL}/api/jobs/${jobId}/status`, {
+              await api.patch(`/api/jobs/${jobId}/status`, {
                 status: "COMPLETED",
               });
               Alert.alert("Éxito", "Has marcado el trabajo como completado.");
@@ -63,13 +65,6 @@ export default function MyBidsScreen() {
       ],
     );
   };
-
-  // 2. Esto hace que la pantalla se actualice cada vez que entras a la pestaña
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyBids();
-    }, []),
-  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -124,7 +119,8 @@ export default function MyBidsScreen() {
         renderItem={({ item }) => {
           // Tu lógica de aceptación impecable
           const isAccepted =
-            item.job?.status === "IN_PROGRESS" && item.job?.workerId === userId;
+            item.job?.status === "IN_PROGRESS" &&
+            item.job?.workerId === user?.id;
 
           return (
             <View style={[styles.card, isAccepted && styles.acceptedCard]}>
@@ -152,10 +148,10 @@ export default function MyBidsScreen() {
                     style={[
                       styles.pendingText,
                       item.job?.status === "COMPLETED" &&
-                        item.job?.workerId === userId && { color: "#FF9500" },
+                        item.job?.workerId === user?.id && { color: "#FF9500" },
                     ]}
                   >
-                    {getStatusText(item.job, userId!)}
+                    {getStatusText(item.job, user?.id!)}
                   </Text>
                 )}
               </View>
@@ -179,7 +175,7 @@ export default function MyBidsScreen() {
 
               {/* NUEVO: Botón de Finalizar */}
               {item.job?.status === "IN_PROGRESS" &&
-                item.job?.workerId === userId && (
+                item.job?.workerId === user?.id && (
                   <TouchableOpacity
                     style={[
                       styles.chatButton,

@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Manny Oficios Cerca",
     slug: "manny-oficios-cerca",
-    version: "1.0.5",
+    version: "1.0.6",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "manny-oficios-cerca",

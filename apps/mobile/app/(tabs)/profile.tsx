@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -13,8 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -56,8 +55,8 @@ export default function ProfileScreen() {
         type: `image/${fileType}`,
       } as any);
 
-      const response = await axios.patch(
-        `${API_URL}/api/users/update-avatar/${user.id}`,
+      const response = await api.patch(
+        `/api/users/update-avatar/${user.id}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
@@ -76,14 +75,11 @@ export default function ProfileScreen() {
   const handleLinkMercadoPago = async () => {
     if (!user?.id) return;
     try {
-      // USAMOS EL USER DEL CONTEXTO, NO SECURESTORE
-      const response = await axios.get(
-        `${API_URL}/api/payments/auth/url/${user.id}`,
-      );
+      const response = await api.get(`/api/payments/auth/url/${user.id}`);
 
       const result = await WebBrowser.openAuthSessionAsync(
         response.data.url,
-        "findjob://profile",
+        "manny-oficios-cerca://profile",
       );
 
       if (result.type === "success") {
