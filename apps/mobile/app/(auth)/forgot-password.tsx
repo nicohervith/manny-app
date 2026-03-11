@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
+import api from "../../src/services/api";
 
 export default function ForgotPasswordScreen() {
   const [step, setStep] = useState(1);
@@ -24,7 +25,7 @@ export default function ForgotPasswordScreen() {
     if (!email) return Alert.alert("Error", "Ingresa tu email");
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      await api.post(`/api/auth/forgot-password`, { email });
       Alert.alert("Enviado", "Revisa tu correo electrónico.");
       setStep(2);
     } catch (e: any) {
@@ -40,7 +41,7 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/auth/reset-password`, {
+      await api.post(`/api/auth/reset-password`, {
         email,
         code,
         newPassword,

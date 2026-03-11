@@ -47,11 +47,11 @@ export const forgotPassword = async (req, res) => {
     }
 };
 export const resetPassword = async (req, res) => {
-    const { email, token, newPassword } = req.body;
+    const { email, code, newPassword } = req.body;
     try {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user ||
-            user.resetToken !== token ||
+            user.resetToken !== code ||
             !user.resetTokenExpiry ||
             user.resetTokenExpiry < new Date()) {
             return res.status(400).json({ error: "Código inválido o expirado" });

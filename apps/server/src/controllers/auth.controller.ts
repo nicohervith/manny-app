@@ -54,13 +54,13 @@ export const forgotPassword = async (req: Request, res: Response) => {
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-  const { email, token, newPassword } = req.body;
+  const { email, code, newPassword } = req.body;
   try {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (
       !user ||
-      user.resetToken !== token ||
+      user.resetToken !== code || 
       !user.resetTokenExpiry ||
       user.resetTokenExpiry < new Date()
     ) {
