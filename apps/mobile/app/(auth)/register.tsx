@@ -13,6 +13,11 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 
+const ROLES = [
+  { value: "CLIENT", label: "Busco un profesional" },
+  { value: "WORKER", label: "Soy profesional" },
+];
+
 export default function RegisterScreen() {
   const [form, setForm] = useState({
     name: "",
@@ -56,12 +61,14 @@ export default function RegisterScreen() {
       <TextInput
         style={styles.input}
         placeholder="Nombre completo"
+        placeholderTextColor="#999"
         onChangeText={(text) => setForm({ ...form, name: text })}
       />
 
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#999"
         autoCapitalize="none"
         keyboardType="email-address"
         onChangeText={(text) => setForm({ ...form, email: text })}
@@ -71,6 +78,7 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.passwordInput}
           placeholder="Contraseña"
+          placeholderTextColor="#999"
           value={form.password}
           onChangeText={(text) => setForm({ ...form, password: text })}
           secureTextEntry={!showPassword}
@@ -89,22 +97,22 @@ export default function RegisterScreen() {
 
       <Text style={styles.label}>¿Qué buscas hacer?</Text>
       <View style={styles.roleContainer}>
-        {["CLIENT", "WORKER"].map((r) => (
+        {ROLES.map(({ value, label }) => (
           <TouchableOpacity
-            key={r}
+            key={value}
             style={[
               styles.roleButton,
-              form.role === r && styles.roleButtonActive,
+              form.role === value && styles.roleButtonActive,
             ]}
-            onPress={() => setForm({ ...form, role: r })}
+            onPress={() => setForm({ ...form, role: value })}
           >
             <Text
               style={[
                 styles.roleText,
-                form.role === r && styles.roleTextActive,
+                form.role === value && styles.roleTextActive,
               ]}
             >
-              {r}
+              {label}
             </Text>
           </TouchableOpacity>
         ))}

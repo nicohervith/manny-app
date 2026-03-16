@@ -5,6 +5,6 @@
 
 */
 -- AlterTable
-ALTER TABLE `bid` DROP COLUMN `estimatedMin`,
+ALTER TABLE `Bid` DROP COLUMN `estimatedMin`,
     ADD COLUMN `availableFrom` VARCHAR(191) NULL,
     ADD COLUMN `availableTo` VARCHAR(191) NULL;

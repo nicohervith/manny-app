@@ -68,6 +68,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#999"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -75,11 +76,12 @@ export default function LoginScreen() {
       />
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.passwordInput} 
+          style={styles.passwordInput}
           placeholder="Contraseña"
+          placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry={!showPassword} 
+          secureTextEntry={!showPassword}
         />
         <TouchableOpacity
           style={styles.eyeIcon}
@@ -137,11 +139,19 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#f5f5f5",
+    color: "#000",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
     borderColor: "#e0e0e0",
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    paddingRight: 50,
+    fontSize: 16,
+    color: "#000", // ← agregar
   },
   button: {
     backgroundColor: "#007AFF",
@@ -164,12 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     position: "relative",
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 12,
-    paddingRight: 50, // Espacio para que el texto no se meta debajo del ojo
-    fontSize: 16,
   },
   eyeIcon: {
     position: "absolute",
