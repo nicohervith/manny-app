@@ -116,7 +116,8 @@ model Bid {
   id           Int      @id @default(autoincrement())
   message      String   @db.Text
   price        Float
-  estimatedMin Int
+  availableFrom  String?
+  availableTo    String?
   createdAt    DateTime @default(now())
 
   status BidStatus @default(PENDING)

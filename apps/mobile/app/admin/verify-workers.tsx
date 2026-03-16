@@ -1,5 +1,4 @@
 // apps/mobile/app/admin/verify-workers.tsx
-import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,23 +10,23 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
+import api from "../../src/services/api";
 
 export default function AdminVerifyScreen() {
   const [pending, setPending] = useState([]);
 
   const loadPending = async () => {
     try {
-      const token = await SecureStore.getItemAsync("userToken"); 
+      const token = await SecureStore.getItemAsync("userToken");
 
       if (!token) {
         Alert.alert("Error", "No hay sesión activa");
         return;
       }
 
-      const res = await axios.get(`${API_URL}/api/admin/pending-workers`, {
+      const res = await api.get(`/api/admin/pending-workers`, {
         headers: {
-          Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
         },
       });
       setPending(res.data);
@@ -46,8 +45,8 @@ export default function AdminVerifyScreen() {
   const handleVerify = async (id: number, status: "VERIFIED" | "REJECTED") => {
     try {
       const token = await SecureStore.getItemAsync("userToken");
-      await axios.patch(
-        `${API_URL}/api/admin/verify-worker`,
+      await api.patch(
+        `/api/admin/verify-worker`,
         { workerId: id, status },
         { headers: { Authorization: `Bearer ${token}` } },
       );

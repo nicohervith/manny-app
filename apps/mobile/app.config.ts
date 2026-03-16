@@ -34,7 +34,13 @@ export default {
       ],
       package: "com.manny.oficioscerca",
       googleServicesFile: "./google-services.json",
-      permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      permissions: [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+      ],
       googleMaps: {
         apiKey: process.env.GOOGLE_MAPS_API_KEY,
       },
@@ -67,6 +73,7 @@ export default {
       ],
       "expo-secure-store",
       "expo-notifications",
+      "@react-native-community/datetimepicker",
     ],
     experiments: {
       typedRoutes: true,

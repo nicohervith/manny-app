@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../../src/constants/Config";
+import api from "../../../src/services/api";
 
 export default function JobBidsScreen() {
   const { id } = useLocalSearchParams(); // ID del Trabajo
@@ -22,7 +22,7 @@ export default function JobBidsScreen() {
   const fetchBids = async () => {
     try {
       // Necesitamos un endpoint que traiga ofertas por JOB_ID
-      const res = await axios.get(`${API_URL}/api/bids/job/${id}`);
+      const res = await api.get(`/api/bids/job/${id}`);
       setBids(res.data);
     } catch (e) {
       console.error(e);
@@ -45,7 +45,7 @@ export default function JobBidsScreen() {
           text: "Contratar",
           onPress: async () => {
             try {
-              await axios.post(`${API_URL}/api/jobs/accept-bid`, {
+              await api.post(`/api/jobs/accept-bid`, {
                 jobId: id,
                 workerId: bid.workerId,
                 bidId: bid.id,

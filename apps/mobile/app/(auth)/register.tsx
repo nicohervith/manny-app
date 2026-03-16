@@ -31,9 +31,6 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
-    console.log("Intentando conectar a:", `${API_URL}/api/auth/register`);
-    console.log("Datos:", form);
-
     try {
       const response = await axios.post(`${API_URL}/api/auth/register`, form);
       console.log("Respuesta del server:", response.data);

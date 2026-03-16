@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Location from "expo-location";
-import { Redirect, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import { JobCard } from "../../src/components/jobCard";
-import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
 
 import ApplyBidModal from "../../src/components/ApplyBidModal";
@@ -83,7 +82,7 @@ export default function WorkerFeedScreen() {
 
   const handlePressApply = async (job: any) => {
     try {
-      const res = await api.get(`${API_URL}/api/worker/status/${user.id}`);
+      const res = await api.get(`/api/worker/status/${user.id}`);
       const { verification } = res.data;
 
       if (verification !== "VERIFIED") {
@@ -110,7 +109,7 @@ export default function WorkerFeedScreen() {
 
   const handleApplyAction = async (data: any) => {
     try {
-      await api.post(`${API_URL}/api/bids/apply`, {
+      await api.post(`/api/bids/apply`, {
         jobId: selectedJob.id,
         workerId: user.id,
         message: data.message,
@@ -138,10 +137,12 @@ export default function WorkerFeedScreen() {
     return distance <= radius;
   });
 
-  useEffect(() => {
-    getPermissionsAndLocation();
-    fetchJobs();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getPermissionsAndLocation();
+      fetchJobs();
+    }, []),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -233,9 +234,9 @@ export default function WorkerFeedScreen() {
           <MapView
             style={{ flex: 1 }}
             initialRegion={{
-              latitude: location?.latitude || -34.6037, // Default a Buenos Aires o tu ciudad
+              latitude: location?.latitude || -34.6037, 
               longitude: location?.longitude || -58.3816,
-              latitudeDelta: radius * 0.02, // Zoom dinámico según el radio
+              latitudeDelta: radius * 0.02, 
               longitudeDelta: radius * 0.02,
             }}
           >
@@ -264,9 +265,6 @@ export default function WorkerFeedScreen() {
                   longitude: job.longitude,
                 }}
                 zIndex={10}
-                onCalloutPress={() => {
-                  handlePressApply(job);
-                }}
               >
                 <View style={styles.customMarker}>
                   <Ionicons name="briefcase" size={20} color="#fff" />
@@ -274,19 +272,26 @@ export default function WorkerFeedScreen() {
 
                 {/* tooltip={true} indica que tú defines todo el diseño del globo */}
                 <Callout tooltip={true}>
-                  <View style={styles.calloutContainer}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handlePressApply(job)}
+                    style={styles.calloutContainer}
+                  >
                     <View style={styles.calloutContent}>
                       <Text style={styles.calloutTitle}>{job.title}</Text>
                       <Text style={styles.calloutPrice}>${job.budget}</Text>
 
-                      <View style={styles.fakeButton}>
+                      <TouchableOpacity
+                        style={styles.fakeButton}
+                        onPress={() => handlePressApply(job)}
+                      >
                         <Text style={styles.calloutButtonText}>
                           TOCAR PARA POSTULARSE
                         </Text>
-                      </View>
+                      </TouchableOpacity>
                     </View>
                     <View style={styles.calloutArrow} />
-                  </View>
+                  </TouchableOpacity>
                 </Callout>
               </Marker>
             ))}
@@ -425,7 +430,7 @@ const styles = StyleSheet.create({
   },
   calloutContainer: {
     alignItems: "center",
-    width: 200, // Un poco más ancho para facilitar el toque
+    width: 200,
     backgroundColor: "transparent",
   },
   calloutContent: {
@@ -435,7 +440,6 @@ const styles = StyleSheet.create({
     width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    // Quita sombras pesadas si ves que el rendimiento baja en el mapa
   },
   calloutTitle: {
     fontWeight: "bold",
@@ -470,7 +474,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#fff",
     borderWidth: 10,
     alignSelf: "center",
-    marginTop: -1, // Para que conecte con el globo
+    marginTop: -1,
   },
   calloutFooter: {},
 });

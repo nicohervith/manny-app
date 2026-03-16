@@ -57,6 +57,7 @@ export default function ChatScreen() {
     setupChat();
 
     socket.on("new-message", (message) => {
+      if (message.senderId === userId) return;
       setMessages((prev) => {
         const exists = prev.find((m) => m.id === message.id);
         if (exists) return prev;

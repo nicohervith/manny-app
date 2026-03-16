@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { API_URL } from "../../../src/constants/Config";
+import api from "../../../src/services/api";
 
 export default function WorkerProfileDetail() {
   const { id } = useLocalSearchParams();
@@ -20,7 +20,7 @@ export default function WorkerProfileDetail() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/worker/profile/${id}`);
+        const res = await api.get(`/api/worker/profile/${id}`);
         setWorker(res.data);
       } catch (e) {
         console.error(e);

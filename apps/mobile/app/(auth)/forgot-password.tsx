@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
 import api from "../../src/services/api";
 
 export default function ForgotPasswordScreen() {

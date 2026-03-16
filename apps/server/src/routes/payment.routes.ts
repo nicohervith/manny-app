@@ -7,12 +7,13 @@ import {
   oauthCallback,
   webhook,
 } from "../controllers/payment.controller.js";
+import { authenticateToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/create-preference", createPreference);
-router.post("/webhook", webhook);
-router.get("/auth/url/:workerId", getAuthUrl);
-router.get("/oauth/callback", oauthCallback);
+router.post("/create-preference", authenticateToken, createPreference);
+router.post("/webhook", authenticateToken, webhook);
+router.get("/auth/url/:workerId", authenticateToken, getAuthUrl);
+router.get("/oauth/callback", authenticateToken, oauthCallback);
 
 export default router;

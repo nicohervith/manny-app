@@ -1,10 +1,15 @@
 import { Router } from "express";
-import { createDispute, getDisputes, resolveDispute } from "../controllers/dispute.controller.js";
+import {
+  createDispute,
+  getDisputes,
+  resolveDispute,
+} from "../controllers/dispute.controller.js";
+import { authenticateToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/", createDispute);
-router.get("/", getDisputes);
-router.patch("/:id/resolve", resolveDispute);
+router.post("/", authenticateToken, createDispute);
+router.get("/", authenticateToken, getDisputes);
+router.patch("/:id/resolve", authenticateToken, resolveDispute);
 
 export default router;

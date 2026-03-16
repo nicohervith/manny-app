@@ -30,11 +30,9 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const fullMessage = message as any;
 
-    // Emitir por Socket.io
     const io = req.app.get("io");
     io.to(`chat_${jobId}`).emit("new-message", fullMessage);
 
-    // Notificación push al destinatario
     const job = fullMessage.job;
     const targetToken =
       job.clientId === parseInt(senderId)

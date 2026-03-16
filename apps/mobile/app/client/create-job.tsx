@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -18,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
+import api from "../../src/services/api";
 
 export default function CreateJobScreen() {
   const [form, setForm] = useState({
@@ -136,7 +135,7 @@ export default function CreateJobScreen() {
         });
       });
 
-      await axios.post(`${API_URL}/api/jobs/create`, formData, {
+      await api.post(`/api/jobs/create`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

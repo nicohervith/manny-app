@@ -3,6 +3,7 @@ import axios from "axios";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.js";
+import { sendPushNotification } from "../services/notification.service.js";
 // ─────────────────────────────────────────────
 // Helper: Refresh token del worker
 // ─────────────────────────────────────────────
@@ -114,6 +115,13 @@ export const webhook = async (req, res) => {
             });
             if (paymentInfo.data.status === "approved") {
                 const jobId = paymentInfo.data.external_reference;
+                const job = await prisma.job.findUnique({
+                    where: { id: parseInt(jobId) },
+                    include: {
+                        worker: { select: { pushToken: true, name: true } },
+                        client: { select: { name: true } },
+                    },
+                });
                 await prisma.$transaction([
                     prisma.job.update({
                         where: { id: parseInt(jobId) },
@@ -130,6 +138,9 @@ export const webhook = async (req, res) => {
                         },
                     }),
                 ]);
+                if (job?.worker?.pushToken) {
+                    await sendPushNotification(job.worker.pushToken, "¡Pago recibido! 💰", `${job.client?.name} pagó el trabajo "${job?.title}"`, { jobId: jobId.toString(), type: "PAYMENT_RECEIVED" });
+                }
             }
         }
         catch (e) {

@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
 import api from "../../src/services/api";
 
@@ -102,7 +101,7 @@ export default function MyJobsScreen() {
     setPayingId(job.id);
     try {
       const response = await api.post(
-        `${API_URL}/api/payments/create-preference`,
+        `/api/payments/create-preference`,
         {
           jobId: job.id,
           price: job.budget,
@@ -116,7 +115,7 @@ export default function MyJobsScreen() {
       // Abrimos el navegador para el pago
       await WebBrowser.openBrowserAsync(checkoutUrl);
 
-      // Opcional: Refrescar al volver para ver si el webhook ya impactó
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       fetchMyJobs();
     } catch (error) {
       console.error("Error al iniciar pago", error);
@@ -133,7 +132,7 @@ export default function MyJobsScreen() {
     }
 
     try {
-      await api.post(`${API_URL}/api/reviews`, {
+      await api.post(`/api/reviews`, {
         jobId: selectedJob.id,
         workerId: selectedJob.workerId,
         reviewerId: selectedJob.clientId,

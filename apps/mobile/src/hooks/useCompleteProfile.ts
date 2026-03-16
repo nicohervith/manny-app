@@ -189,19 +189,45 @@ export function useCompleteProfile() {
   };
 
   const pickImage = async (key: keyof ProfileImages) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permiso necesario", "Necesitamos acceso a tus fotos.");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.5,
-    });
-    if (!result.canceled) {
-      setImages((prev) => ({ ...prev, [key]: result.assets[0].uri }));
-    }
+    Alert.alert("Seleccionar imagen", "¿Cómo querés agregar la foto?", [
+      {
+        text: "Cámara",
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permiso necesario", "Necesitamos acceso a tu cámara.");
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            quality: 0.5,
+          });
+          if (!result.canceled) {
+            setImages((prev) => ({ ...prev, [key]: result.assets[0].uri }));
+          }
+        },
+      },
+      {
+        text: "Galería",
+        onPress: async () => {
+          const { status } =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert("Permiso necesario", "Necesitamos acceso a tus fotos.");
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.5,
+          });
+          if (!result.canceled) {
+            setImages((prev) => ({ ...prev, [key]: result.assets[0].uri }));
+          }
+        },
+      },
+      { text: "Cancelar", style: "cancel" },
+    ]);
   };
 
   const handlePressVerify = async () => {

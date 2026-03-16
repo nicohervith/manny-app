@@ -9,15 +9,16 @@ import {
   updateJobStatus,
 } from "../controllers/job.controller.js";
 import { upload } from "../lib/cloudinary.js";
+import { authenticateToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/create", upload.array("images", 5), createJob);
-router.post("/adjust-budget", adjustBudget);
-router.post("/accept-bid", acceptBid);
+router.post("/create", authenticateToken, upload.array("images", 5), createJob);
+router.post("/adjust-budget", authenticateToken, adjustBudget);
+router.post("/accept-bid", authenticateToken, acceptBid);
 router.get("/available", getAvailableJobs);
-router.get("/client/:clientId", getClientJobs);
-router.get("/feed/:workerId", getWorkerFeed);
-router.patch("/:id/status", updateJobStatus);
+router.get("/client/:clientId", authenticateToken, getClientJobs);
+router.get("/feed/:workerId", authenticateToken, getWorkerFeed);
+router.patch("/:id/status", authenticateToken, updateJobStatus);
 
 export default router;
