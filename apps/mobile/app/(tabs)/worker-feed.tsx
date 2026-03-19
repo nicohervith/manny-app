@@ -234,9 +234,9 @@ export default function WorkerFeedScreen() {
           <MapView
             style={{ flex: 1 }}
             initialRegion={{
-              latitude: location?.latitude || -34.6037, 
+              latitude: location?.latitude || -34.6037,
               longitude: location?.longitude || -58.3816,
-              latitudeDelta: radius * 0.02, 
+              latitudeDelta: radius * 0.02,
               longitudeDelta: radius * 0.02,
             }}
           >
@@ -265,33 +265,25 @@ export default function WorkerFeedScreen() {
                   longitude: job.longitude,
                 }}
                 zIndex={10}
+                onCalloutPress={() => handlePressApply(job)} // ← mover acá
               >
                 <View style={styles.customMarker}>
                   <Ionicons name="briefcase" size={20} color="#fff" />
                 </View>
 
-                {/* tooltip={true} indica que tú defines todo el diseño del globo */}
                 <Callout tooltip={true}>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handlePressApply(job)}
-                    style={styles.calloutContainer}
-                  >
+                  <View style={styles.calloutContainer}>
                     <View style={styles.calloutContent}>
                       <Text style={styles.calloutTitle}>{job.title}</Text>
                       <Text style={styles.calloutPrice}>${job.budget}</Text>
-
-                      <TouchableOpacity
-                        style={styles.fakeButton}
-                        onPress={() => handlePressApply(job)}
-                      >
+                      <View style={styles.fakeButton}>
                         <Text style={styles.calloutButtonText}>
                           TOCAR PARA POSTULARSE
                         </Text>
-                      </TouchableOpacity>
+                      </View>
                     </View>
                     <View style={styles.calloutArrow} />
-                  </TouchableOpacity>
+                  </View>
                 </Callout>
               </Marker>
             ))}

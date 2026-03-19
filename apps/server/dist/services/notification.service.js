@@ -15,9 +15,15 @@ export const sendPushNotification = async (targetToken, title, body, data) => {
         },
     ];
     try {
-        await expo.sendPushNotificationsAsync(messages);
+        const tickets = await expo.sendPushNotificationsAsync(messages);
+        console.log("Push tickets:", JSON.stringify(tickets));
+        tickets.forEach((ticket) => {
+            if (ticket.status === "error") {
+                console.error("Error ticket:", ticket.message, ticket.details);
+            }
+        });
     }
     catch (error) {
-        console.error(error);
+        console.error("Error enviando push:", error);
     }
 };

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -21,6 +21,21 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
 
   const role = user?.role;
+
+  const [isMpLinked, setIsMpLinked] = useState(false);
+
+  useEffect(() => {
+    if (role !== "WORKER" || !user?.id) return;
+    const checkMpStatus = async () => {
+      try {
+        const res = await api.get(`/api/worker/profile/${user.id}`);
+        setIsMpLinked(!!res.data.mercadopagoId);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    checkMpStatus();
+  }, [user]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -127,29 +142,54 @@ export default function ProfileScreen() {
 
       {role === "WORKER" && (
         <>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => router.push("/worker/complete-profile")}
-          >
-            <Ionicons name="briefcase-outline" size={20} color="#333" />
-            <Text style={styles.menuText}>Editar Perfil Profesional</Text>
-            <Ionicons name="chevron-forward" size={20} color="#CCC" />
-          </TouchableOpacity>
+          {isMpLinked ? (
+            <View
+              style={[
+                styles.menuButton,
+                { borderLeftWidth: 4, borderLeftColor: "#28A745" },
+              ]}
+            >
+              <Ionicons name="checkmark-circle" size={20} color="#28A745" />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuText, { color: "#28A745" }]}>
+                  Mercado Pago vinculado ✓
+                </Text>
+                <Text style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                  Tu cuenta está lista para recibir pagos
+                </Text>
+              </View>
+              <TouchableOpacity onPress={handleLinkMercadoPago}>
+                <Text style={{ fontSize: 12, color: "#00B1EA" }}>Cambiar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.menuButton,
+                { borderLeftWidth: 4, borderLeftColor: "#00B1EA" },
+              ]}
+              onPress={handleLinkMercadoPago}
+            >
+              <Ionicons name="wallet-outline" size={20} color="#00B1EA" />
+              <Text style={[styles.menuText, { color: "#00B1EA" }]}>
+                Vincular Mercado Pago
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="#CCC" />
+            </TouchableOpacity>
+          )}
 
-          {/* BOTÓN DE MERCADO PAGO AÑADIDO AQUÍ */}
-          <TouchableOpacity
-            style={[
-              styles.menuButton,
-              { borderLeftWidth: 4, borderLeftColor: "#00B1EA" },
-            ]}
-            onPress={handleLinkMercadoPago}
-          >
-            <Ionicons name="wallet-outline" size={20} color="#00B1EA" />
-            <Text style={[styles.menuText, { color: "#00B1EA" }]}>
-              Vincular Mercado Pago
+          <View style={styles.commissionInfo}>
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color="#666"
+            />
+            <Text style={styles.commissionText}>
+              Manny Oficios Cerca retiene una comisión del 10% sobre cada pago
+              recibido a través de la plataforma. El monto que acreditamos en tu
+              cuenta ya tiene descontada esta comisión.
             </Text>
-            <Ionicons name="chevron-forward" size={20} color="#CCC" />
-          </TouchableOpacity>
+          </View>
         </>
       )}
 
@@ -213,5 +253,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
     color: "#333",
+  },
+  commissionInfo: {
+    flexDirection: "row",
+    backgroundColor: "#F0F6FF",
+    borderRadius: 10,
+    padding: 12,
+    gap: 8,
+    marginBottom: 16,
+    alignItems: "flex-start",
+  },
+  commissionText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#555",
+    lineHeight: 18,
   },
 });

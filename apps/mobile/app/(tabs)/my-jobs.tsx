@@ -100,14 +100,11 @@ export default function MyJobsScreen() {
 
     setPayingId(job.id);
     try {
-      const response = await api.post(
-        `/api/payments/create-preference`,
-        {
-          jobId: job.id,
-          price: job.budget,
-          workerId: job.workerId,
-        },
-      );
+      const response = await api.post(`/api/payments/create-preference`, {
+        jobId: job.id,
+        price: job.budget,
+        workerId: job.workerId,
+      });
 
       const { id } = response.data;
       const checkoutUrl = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${id}`;
@@ -263,6 +260,16 @@ export default function MyJobsScreen() {
                       </>
                     )}
                   </TouchableOpacity>
+                )}
+
+                {isCompleted && (
+                  <View style={styles.cashInfoButton}>
+                    <Ionicons name="cash-outline" size={18} color="#28A745" />
+                    <Text style={styles.cashInfoText}>
+                      ¿Pagás en efectivo? El profesional debe confirmar la
+                      recepción del pago.
+                    </Text>
+                  </View>
                 )}
 
                 {/* BOTÓN CALIFICAR: Solo si está PAID y no tiene reseña */}
@@ -577,5 +584,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     color: "#856404",
+  },
+  cashInfoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F5E9",
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    gap: 8,
+    flex: 1,
+  },
+  cashInfoText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#28A745",
   },
 });

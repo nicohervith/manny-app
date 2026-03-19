@@ -151,7 +151,18 @@ const styles = StyleSheet.create({
     padding: 12,
     paddingRight: 50,
     fontSize: 16,
-    color: "#000", // ← agregar
+    color: "#000",
+    borderColor: "#e0e0e0",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
+    marginBottom: 15,
+    position: "relative",
+    borderColor: "#e0e0e0",
+    borderWidth: 1,
   },
   button: {
     backgroundColor: "#007AFF",
@@ -166,14 +177,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     fontSize: 14,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0F2F5", // O el color que uses en tus inputs
-    borderRadius: 10,
-    marginBottom: 15,
-    position: "relative",
   },
   eyeIcon: {
     position: "absolute",

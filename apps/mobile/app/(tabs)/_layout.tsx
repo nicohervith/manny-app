@@ -34,21 +34,17 @@ export default function TabLayout() {
     const initializeServices = async () => {
       try {
         const token = await registerForPushNotificationsAsync();
-        // Solo intentamos guardar si realmente obtuvimos un token
         if (token) {
           await api.patch(`/api/users/update-push-token/${user.id}`, {
             pushToken: token,
           });
-          console.log("Push Token guardado");
         }
       } catch (e) {
-        // Esto atrapará el error de Expo Go sin romper la app
         console.warn(
           "Las notificaciones no están disponibles en este entorno (Probablemente Expo Go)",
         );
       }
 
-      // El socket sí debería funcionar en Expo Go, así que lo dejamos fuera del catch anterior o en su propio bloque
       try {
         const res = await api.get(`/api/chat/list/${user.id}`);
         res.data.forEach((chat: any) => {
@@ -62,11 +58,9 @@ export default function TabLayout() {
     initializeServices();
   }, [user]);
 
-  // 3. MANEJO DE CLIC EN NOTIFICACIÓN (Deep Linking)
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        // 1. Extraemos los datos y les asignamos un tipo (casting)
         const data = response.notification.request.content.data as {
           jobId?: string | number;
           type?: string;
@@ -78,6 +72,9 @@ export default function TabLayout() {
           // @ts-ignore
           router.push(`/(tabs)/my-jobs/${jobId}`);
         }
+        if (type === "BID_ACCEPTED" && jobId) {
+          router.push("/(tabs)/my-bids");
+        }
         if (type === "JOB_COMPLETED" && jobId) {
           router.push(`/(tabs)/my-jobs`);
         }
@@ -87,7 +84,6 @@ export default function TabLayout() {
     return () => subscription.remove();
   }, []);
 
-  // 4. LÓGICA DE SOCKETS (Se mantiene similar, pero usando 'user')
   useEffect(() => {
     socket.on("new-message", (message) => {
       const chatRoute = `/chat/${message.jobId}`;
@@ -122,6 +118,9 @@ export default function TabLayout() {
     if (role === "CLIENT" && pathname === "/worker-feed") {
       router.replace("/");
     }
+    if (role === "ADMIN" && (pathname === "/" || pathname === "/worker-feed")) {
+      router.replace("/verify-workers");
+    }
   }, [user, pathname]);
 
   if (!user) return null;
@@ -130,12 +129,10 @@ export default function TabLayout() {
 
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
-      {/* Vista de profesionales (Solo Cliente) */}
       <Tabs.Screen
         name="index"
         options={{
           title: "Profesionales",
-          // Si es Worker, ocultamos el TAB por completo
           href: role === "CLIENT" ? "/" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="search" size={24} color={color} />
@@ -147,7 +144,6 @@ export default function TabLayout() {
         name="worker-feed"
         options={{
           title: "Trabajos",
-          // Si es Client, ocultamos el TAB por completo
           href: role === "WORKER" ? "/worker-feed" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="hammer" size={24} color={color} />
@@ -155,12 +151,10 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Publicar Trabajo (Solo Cliente) */}
       <Tabs.Screen
         name="create-job"
         options={{
           title: "Publicar",
-          // href controla la visibilidad para el Worker
           href: role === "CLIENT" ? "/create-job" : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="add-circle" size={28} color={color} />
@@ -168,7 +162,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* NUEVA: Lista de Chats (Para ambos roles) */}
       <Tabs.Screen
         name="chats"
         options={{

@@ -198,29 +198,49 @@ export const acceptBid = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Faltan parámetros requeridos" });
     }
 
+    // Obtener el job y bid ANTES de la transacción
+    const [job, bid] = await Promise.all([
+      prisma.job.findUnique({ where: { id: parseInt(jobId) } }),
+      prisma.bid.findUnique({ where: { id: parseInt(bidId) } }),
+    ]);
+
+    if (!job || !bid) {
+      return res.status(404).json({ error: "Trabajo u oferta no encontrado" });
+    }
+
     await prisma.$transaction([
-      // 1. Asignar el worker y cambiar estado del job
       prisma.job.update({
         where: { id: parseInt(jobId) },
         data: {
           status: "IN_PROGRESS",
           workerId: parseInt(workerId),
+          budget: bid.price,
         },
       }),
-      // 2. Marcar la bid ganadora como ACCEPTED
       prisma.bid.update({
         where: { id: parseInt(bidId) },
         data: { status: "ACCEPTED" },
       }),
-      // 3. Rechazar el resto de bids del mismo job
       prisma.bid.updateMany({
-        where: {
-          jobId: parseInt(jobId),
-          NOT: { id: parseInt(bidId) },
-        },
+        where: { jobId: parseInt(jobId), NOT: { id: parseInt(bidId) } },
         data: { status: "REJECTED" },
       }),
     ]);
+
+    // Notificar al worker
+    const worker = await prisma.user.findUnique({
+      where: { id: parseInt(workerId) },
+      select: { pushToken: true },
+    });
+
+    if (worker?.pushToken) {
+      await sendPushNotification(
+        worker.pushToken,
+        "¡Tu propuesta fue aceptada! 🎉",
+        `El cliente aceptó tu oferta para "${job.title}". Ya podés contactarlo.`,
+        { jobId: jobId.toString(), type: "BID_ACCEPTED" },
+      );
+    }
 
     res.json({ message: "Trabajador asignado con éxito" });
   } catch (error) {
@@ -244,6 +264,7 @@ export const updateJobStatus = async (req: Request, res: Response) => {
     "CANCELLED",
     "DISPUTED",
   ];
+
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
       error: `Estado inválido. Valores permitidos: ${validStatuses.join(", ")}`,
@@ -260,19 +281,25 @@ export const updateJobStatus = async (req: Request, res: Response) => {
       },
     });
 
-    // Notificar al cliente cuando el worker marca como COMPLETED
-    if (status === "COMPLETED") {
-      const clientToken = (updatedJob as any).client?.pushToken;
-      const workerName = (updatedJob as any).worker?.name;
+    const clientToken = (updatedJob as any).client?.pushToken;
+    const workerName = (updatedJob as any).worker?.name;
 
-      if (clientToken) {
-        await sendPushNotification(
-          clientToken,
-          "Trabajo completado",
-          `${workerName} marcó el trabajo "${updatedJob.title}" como terminado. ¡Confirmá y pagá!`,
-          { jobId: id, type: "JOB_COMPLETED" },
-        );
-      }
+    if (status === "COMPLETED" && clientToken) {
+      await sendPushNotification(
+        clientToken,
+        "Trabajo completado",
+        `${workerName} marcó el trabajo "${updatedJob.title}" como terminado. ¡Confirmá y pagá!`,
+        { jobId: id, type: "JOB_COMPLETED" },
+      );
+    }
+
+    if (status === "PAID" && clientToken) {
+      await sendPushNotification(
+        clientToken,
+        "Pago confirmado ✅",
+        `${workerName} confirmó que recibió el pago en efectivo.`,
+        { jobId: id, type: "PAYMENT_RECEIVED" },
+      );
     }
 
     res.json({ message: "Estado actualizado con éxito", job: updatedJob });

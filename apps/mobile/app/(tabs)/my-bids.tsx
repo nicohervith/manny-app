@@ -66,6 +66,34 @@ export default function MyBidsScreen() {
     );
   };
 
+  const handleCashPayment = async (jobId: number) => {
+    Alert.alert(
+      "Confirmar pago en efectivo",
+      "¿Confirmás que el cliente realizó el pago en efectivo?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sí, confirmar",
+          onPress: async () => {
+            try {
+              await api.patch(`/api/jobs/${jobId}/status`, {
+                status: "PAID",
+                paymentMethod: "CASH",
+              });
+              Alert.alert(
+                "✅ Confirmado",
+                "El pago en efectivo fue registrado.",
+              );
+              fetchMyBids();
+            } catch (error) {
+              Alert.alert("Error", "No se pudo confirmar el pago.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchMyBids(true);
@@ -193,6 +221,47 @@ export default function MyBidsScreen() {
                     </Text>
                   </TouchableOpacity>
                 )}
+
+              {item.job?.status === "COMPLETED" &&
+                item.job?.workerId === user?.id && (
+                  <TouchableOpacity
+                    style={[
+                      styles.chatButton,
+                      { backgroundColor: "#6C3483", marginTop: 8 },
+                    ]}
+                    onPress={() => handleCashPayment(item.job.id)}
+                  >
+                    <Ionicons name="cash-outline" size={20} color="#fff" />
+                    <Text style={styles.chatButtonText}>
+                      Confirmar pago en efectivo
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+              {item.job?.status === "PAID" &&
+                item.job?.workerId === user?.id && (
+                  <View style={styles.earningsBox}>
+                    <Text style={styles.earningsTitle}>Resumen del pago</Text>
+                    <View style={styles.earningsRow}>
+                      <Text style={styles.earningsLabel}>Precio acordado</Text>
+                      <Text style={styles.earningsValue}>${item.price}</Text>
+                    </View>
+                    <View style={styles.earningsRow}>
+                      <Text style={styles.earningsLabel}>
+                        Comisión Manny (10%)
+                      </Text>
+                      <Text style={styles.earningsNegative}>
+                        -${(item.price * 0.1).toFixed(0)}
+                      </Text>
+                    </View>
+                    <View style={[styles.earningsRow, styles.earningsTotalRow]}>
+                      <Text style={styles.earningsTotalLabel}>Recibís</Text>
+                      <Text style={styles.earningsTotalValue}>
+                        ${(item.price * 0.9).toFixed(0)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
             </View>
           );
         }}
@@ -252,4 +321,34 @@ const styles = StyleSheet.create({
     color: "#999",
     fontSize: 16,
   },
+  earningsBox: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
+  },
+  earningsTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 8,
+  },
+  earningsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  earningsLabel: { fontSize: 13, color: "#666" },
+  earningsValue: { fontSize: 13, color: "#333" },
+  earningsNegative: { fontSize: 13, color: "#DC3545" },
+  earningsTotalRow: {
+    borderTopWidth: 1,
+    borderTopColor: "#DEE2E6",
+    marginTop: 4,
+    paddingTop: 8,
+  },
+  earningsTotalLabel: { fontSize: 14, fontWeight: "700", color: "#333" },
+  earningsTotalValue: { fontSize: 14, fontWeight: "700", color: "#28A745" },
 });

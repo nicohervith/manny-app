@@ -36,10 +36,10 @@ export const CATEGORIES = [
   },
   {
     id: "6",
-    name: "Jardinería",
-    icon: "leaf",
-    color: "#F1F8E9",
-    iconColor: "#689F38",
+    name: "Gasista",
+    icon: "flame",
+    color: "#FFF3E0",
+    iconColor: "#FF6D00",
   },
 ];
 
