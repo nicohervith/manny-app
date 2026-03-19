@@ -217,7 +217,7 @@ export const acceptBid = async (req, res) => {
 // ─────────────────────────────────────────────
 export const updateJobStatus = async (req, res) => {
     const id = req.params.id;
-    const { status } = req.body;
+    const { status, paymentMethod } = req.body;
     const validStatuses = [
         "PENDING",
         "IN_PROGRESS",
@@ -234,7 +234,7 @@ export const updateJobStatus = async (req, res) => {
     try {
         const updatedJob = await prisma.job.update({
             where: { id: parseInt(id) },
-            data: { status },
+            data: { status, ...(paymentMethod && { paymentMethod }) },
             include: {
                 client: { select: { pushToken: true, name: true } },
                 worker: { select: { name: true } },

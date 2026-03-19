@@ -1,14 +1,14 @@
 import { Router } from "express";
-import { upload } from "../lib/cloudinary.js";
-import { authenticateToken, isAdmin } from "../middlewares/auth.middleware.js";
 import {
   completeProfile,
-  listWorkers,
-  getWorkerProfile,
   completeWorkerJob,
-  verifyWorkerStatus,
+  getWorkerProfile,
   getWorkerVerificationStatus,
+  listWorkers,
+  verifyWorkerStatus,
 } from "../controllers/worker.controller.js";
+import { upload } from "../lib/cloudinary.js";
+import { authenticateToken, isAdmin } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
+import { completeProfile, completeWorkerJob, getWorkerProfile, getWorkerVerificationStatus, listWorkers, verifyWorkerStatus, } from "../controllers/worker.controller.js";
 import { upload } from "../lib/cloudinary.js";
 import { authenticateToken, isAdmin } from "../middlewares/auth.middleware.js";
-import { completeProfile, listWorkers, getWorkerProfile, completeWorkerJob, verifyWorkerStatus, getWorkerVerificationStatus, } from "../controllers/worker.controller.js";
 const router = Router();
 const uploadFields = upload.fields([
     { name: "dniFront", maxCount: 1 },

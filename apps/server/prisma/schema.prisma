@@ -54,6 +54,7 @@ model Job {
   transaction Transaction?
   adjustments JobAdjustment[]
   bids        Bid[]
+  paymentMethod String? // "CASH" | "MP" | null
   messages    Message[]
 
   // CAMPO AÑADIDO PARA LA REVIEW:
