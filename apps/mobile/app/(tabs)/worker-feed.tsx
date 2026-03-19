@@ -265,7 +265,7 @@ export default function WorkerFeedScreen() {
                   longitude: job.longitude,
                 }}
                 zIndex={10}
-                onCalloutPress={() => handlePressApply(job)} // ← mover acá
+                onPress={() => handlePressApply(job)} // ← al tocar el marcador abre el modal
               >
                 <View style={styles.customMarker}>
                   <Ionicons name="briefcase" size={20} color="#fff" />
@@ -276,11 +276,16 @@ export default function WorkerFeedScreen() {
                     <View style={styles.calloutContent}>
                       <Text style={styles.calloutTitle}>{job.title}</Text>
                       <Text style={styles.calloutPrice}>${job.budget}</Text>
-                      <View style={styles.fakeButton}>
-                        <Text style={styles.calloutButtonText}>
-                          TOCAR PARA POSTULARSE
-                        </Text>
-                      </View>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: "#666",
+                          textAlign: "center",
+                          marginTop: 4,
+                        }}
+                      >
+                        Tocá el marcador para postularte
+                      </Text>
                     </View>
                     <View style={styles.calloutArrow} />
                   </View>

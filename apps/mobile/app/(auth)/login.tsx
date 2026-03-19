@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
   Alert,
@@ -22,7 +21,7 @@ export default function LoginScreen() {
 
   const router = useRouter();
 
-  const { setUser } = useAuth();
+  const { setToken } = useAuth();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -38,11 +37,10 @@ export default function LoginScreen() {
         Alert.alert("Error", "Problema de autenticación en el servidor.");
         return;
       }
-      await SecureStore.setItemAsync("userToken", token);
-      await SecureStore.setItemAsync("userData", JSON.stringify(user));
-      setUser(user);
 
-      console.log("Login exitoso, usuario seteado en Contexto");
+      await setToken(token, user);
+
+      console.log("Login exitoso");
       if (user.role === "ADMIN") {
         router.replace("/(tabs)/verify-workers");
       } else if (user.role === "WORKER" && !user.profile) {

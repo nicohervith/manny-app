@@ -1,11 +1,9 @@
-import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
-import { API_URL } from "../constants/Config";
 import api from "../services/api";
 
 export type ProfileImages = {
@@ -278,7 +276,7 @@ export function useCompleteProfile() {
       appendIfLocal(images.dniBack, "dniBack");
       appendIfLocal(images.selfie, "selfie");
 
-      await axios.post(`${API_URL}/api/worker/complete-profile`, formData, {
+      await api.post(`/api/worker/complete-profile`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

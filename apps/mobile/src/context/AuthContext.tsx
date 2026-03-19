@@ -1,10 +1,12 @@
 import { useRouter, useSegments } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface AuthContextType {
   user: any;
+  token: string | null;
   setUser: (user: any) => void;
+  setToken: (token: string, user: any) => Promise<void>;
   updateUser: (newData: any) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -14,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
+  const [token, setTokenState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const segments = useSegments();
   const router = useRouter();
@@ -21,9 +24,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const loadStorageData = async () => {
       try {
-        const authDataSerialized = await SecureStore.getItemAsync("userData");
-        if (authDataSerialized) {
-          setUser(JSON.parse(authDataSerialized));
+        const storedToken = await SecureStore.getItemAsync("userToken");
+        const storedUser = await SecureStore.getItemAsync("userData");
+
+        if (storedToken && storedUser) {
+          setTokenState(storedToken);
+          setUser(JSON.parse(storedUser));
         }
       } catch (e) {
         console.error("Error loading auth data", e);
@@ -50,12 +56,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, segments, isLoading]);
 
+  const setToken = async (newToken: string, newUser: any) => {
+    try {
+      await SecureStore.setItemAsync("userToken", newToken);
+      await SecureStore.setItemAsync("userData", JSON.stringify(newUser));
+      setTokenState(newToken);
+      setUser(newUser);
+    } catch (e) {
+      console.error("Error saving auth data", e);
+    }
+  };
+
   const updateUser = async (newData: any) => {
     try {
       setUser((prevUser: any) => {
         if (!prevUser) return null;
         const updated = { ...prevUser, ...newData };
-        // Guardar en storage asincrónicamente
         SecureStore.setItemAsync("userData", JSON.stringify(updated));
         return updated;
       });
@@ -67,12 +83,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     await SecureStore.deleteItemAsync("userToken");
     await SecureStore.deleteItemAsync("userData");
+    setTokenState(null);
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, setUser, updateUser, logout, isLoading }}
+      value={{ user, token, setUser, setToken, updateUser, logout, isLoading }}
     >
       {children}
     </AuthContext.Provider>

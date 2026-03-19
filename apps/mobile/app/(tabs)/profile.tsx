@@ -142,6 +142,14 @@ export default function ProfileScreen() {
 
       {role === "WORKER" && (
         <>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => router.push("/worker/complete-profile")}
+          >
+            <Ionicons name="briefcase-outline" size={20} color="#333" />
+            <Text style={styles.menuText}>Editar Perfil Profesional</Text>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
           {isMpLinked ? (
             <View
               style={[

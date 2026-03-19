@@ -239,7 +239,8 @@ export default function MyBidsScreen() {
                 )}
 
               {item.job?.status === "PAID" &&
-                item.job?.workerId === user?.id && (
+                item.job?.workerId === user?.id &&
+                item.job?.paymentMethod !== "CASH" && (
                   <View style={styles.earningsBox}>
                     <Text style={styles.earningsTitle}>Resumen del pago</Text>
                     <View style={styles.earningsRow}>
@@ -260,6 +261,19 @@ export default function MyBidsScreen() {
                         ${(item.price * 0.9).toFixed(0)}
                       </Text>
                     </View>
+                  </View>
+                )}
+
+              {item.job?.status === "PAID" &&
+                item.job?.workerId === user?.id &&
+                item.job?.paymentMethod === "CASH" && (
+                  <View style={styles.earningsBox}>
+                    <Text style={styles.earningsTitle}>
+                      Pago en efectivo confirmado ✅
+                    </Text>
+                    <Text style={styles.earningsLabel}>
+                      Recibiste: ${item.price}
+                    </Text>
                   </View>
                 )}
             </View>

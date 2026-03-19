@@ -31,7 +31,7 @@ export const WorkerCard = ({ item }: { item: any }) => {
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={14} color="#FFD700" />
           <Text style={styles.ratingText}>
-            {item.rating || "5.0"}{" "}
+            {item.rating}{" "}
             <Text style={styles.reviewsText}>({item.totalReviews || 0})</Text>
           </Text>
         </View>

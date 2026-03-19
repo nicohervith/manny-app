@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 import { Redirect, router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,8 +11,8 @@ import {
 } from "react-native";
 import { CategoryGrid } from "../../src/components/Categories";
 import { WorkerCard } from "../../src/components/WorkerCard";
-import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
+import api from "../../src/services/api";
 
 export default function ClientHomeScreen() {
   const { user, isLoading } = useAuth();
@@ -26,12 +25,8 @@ export default function ClientHomeScreen() {
   const fetchWorkers = async (tag?: string) => {
     try {
       setLoading(true);
-      // Si hay tag, lo pasamos como query param
-      const url = tag
-        ? `${API_URL}/api/worker/list?tag=${tag}`
-        : `${API_URL}/api/worker/list`;
-
-      const response = await axios.get(url);
+      const url = tag ? `/api/worker/list?tag=${tag}` : `/api/worker/list`;
+      const response = await api.get(url);
       setWorkers(response.data);
     } catch (error: any) {
       console.error("Error:", error.message);
