@@ -23,7 +23,7 @@ router.patch(
   authenticateToken,
   updatePushTokenById,
 );
-router.patch("/update-push-token", authenticateToken, updatePushToken);
+router.patch("/update-push-token", updatePushToken);
 router.post("/send-code", authenticateToken, sendVerificationCode);
 router.post("/verify-otp", authenticateToken, verifyOtp);
 router.post("/ping/:userId", authenticateToken, pingUser);
