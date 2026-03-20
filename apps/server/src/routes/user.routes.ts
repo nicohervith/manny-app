@@ -20,7 +20,6 @@ router.patch(
 );
 router.patch(
   "/update-push-token/:userId",
-  authenticateToken,
   updatePushTokenById,
 );
 router.patch("/update-push-token", updatePushToken);

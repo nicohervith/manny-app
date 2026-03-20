@@ -4,7 +4,7 @@ import { upload } from "../lib/cloudinary.js";
 import { authenticateToken } from "../middlewares/auth.middleware.js";
 const router = Router();
 router.patch("/update-avatar/:userId", authenticateToken, upload.single("avatar"), updateAvatar);
-router.patch("/update-push-token/:userId", authenticateToken, updatePushTokenById);
+router.patch("/update-push-token/:userId", updatePushTokenById);
 router.patch("/update-push-token", updatePushToken);
 router.post("/send-code", authenticateToken, sendVerificationCode);
 router.post("/verify-otp", authenticateToken, verifyOtp);
