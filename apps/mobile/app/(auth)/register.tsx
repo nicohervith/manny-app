@@ -145,7 +145,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f5f5f5",
+    color: "#000",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -180,8 +181,8 @@ const styles = StyleSheet.create({
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   passwordContainer: {
     flexDirection: "row",
+    backgroundColor: "#f5f5f5",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
@@ -189,6 +190,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   passwordInput: {
+    color: "#000",
     flex: 1,
     padding: 15,
     paddingRight: 50,

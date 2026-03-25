@@ -17,3 +17,33 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     `,
     });
 };
+export const sendVerificationEmail = async (email, code) => {
+    try {
+        const { data, error } = await resend.emails.send({
+            from: "Manny Oficios Cerca <no-reply@mannyoficioscerca.com.ar>",
+            to: email,
+            subject: "Verifica tu correo - Manny Oficios Cerca",
+            html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #007AFF;">Verificación de correo</h2>
+          <p>Tu código de verificación para Manny Oficios Cerca es:</p>
+          <div style="background: #f2f2f7; padding: 20px; border-radius: 10px; text-align: center;">
+            <h1 style="letter-spacing: 10px; color: #333; margin: 0;">${code}</h1>
+          </div>
+          <p style="color: #999; font-size: 12px; margin-top: 20px;">
+            Si no solicitaste este código, puedes ignorar este mensaje.
+          </p>
+        </div>
+      `,
+        });
+        if (error) {
+            console.error("Error de Resend:", error);
+            throw new Error(error.message);
+        }
+        return data;
+    }
+    catch (err) {
+        console.error("Falla crítica en sendVerificationEmail:", err);
+        throw err;
+    }
+};

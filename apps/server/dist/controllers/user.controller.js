@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { sendVerificationEmail } from "../utils/mailer.js";
+import { sendVerificationEmail } from "../services/email.service.js";
 export const updateAvatar = async (req, res) => {
     try {
         const userId = req.params.userId;

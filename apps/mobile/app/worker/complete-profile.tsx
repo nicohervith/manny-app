@@ -9,11 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { EmailVerificationBanner } from "../../src/components/worker/EmailVerificationBanner";
 import { IdentityImages } from "../../src/components/worker/IdentityImages";
 import { LocationPicker } from "../../src/components/worker/LocationPicker";
 import { AVAILABLE_TAGS } from "../../src/constants/Categories";
+import { useAuth } from "../../src/context/AuthContext";
 import { useCompleteProfile } from "../../src/hooks/useCompleteProfile";
-import { EmailVerificationBanner } from "../../src/components/worker/EmailVerificationBanner";
 
 export default function CompleteProfileScreen() {
   const {
@@ -27,8 +28,6 @@ export default function CompleteProfileScreen() {
     loading,
     loadingLocation,
     isEditing,
-    isEmailVerified,
-    userEmail,
     toggleTag,
     pickImage,
     getLocation,
@@ -38,6 +37,7 @@ export default function CompleteProfileScreen() {
     saveProfile,
   } = useCompleteProfile();
 
+  const { user } = useAuth();
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>
@@ -47,8 +47,8 @@ export default function CompleteProfileScreen() {
       </Text>
 
       <EmailVerificationBanner
-        email={userEmail}
-        isVerified={isEmailVerified}
+        email={user?.email}
+        isVerified={user?.emailVerified}
         onPressVerify={handlePressVerify}
       />
 

@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Manny Oficios Cerca",
     slug: "manny-oficios-cerca",
-    version: "1.0.6",
+    version: "1.0.9",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "manny-oficios-cerca",
@@ -12,7 +12,7 @@ export default {
       supportsTablet: true,
     },
     android: {
-      versionCode: 7,
+      versionCode: 24,
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#E6F4FE",
@@ -34,17 +34,11 @@ export default {
       ],
       package: "com.manny.oficioscerca",
       googleServicesFile: "./google-services.json",
-      permissions: [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "CAMERA",
-      ],
+      permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "CAMERA"],
       googleMaps: {
         apiKey: process.env.GOOGLE_MAPS_API_KEY,
       },
-      softwareKeyboardLayoutMode: "pan",
+      softwareKeyboardLayoutMode: "resize",
     },
     web: {
       output: "static",

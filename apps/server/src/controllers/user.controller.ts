@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { sendVerificationEmail } from "../utils/mailer.js";
+import { sendVerificationEmail } from "../services/email.service.js";
 
 export const updateAvatar = async (req: Request, res: Response) => {
   try {

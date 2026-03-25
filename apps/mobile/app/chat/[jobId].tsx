@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
@@ -23,6 +24,7 @@ const socket = io(API_URL.replace("/api", ""), {
 });
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const { jobId } = useLocalSearchParams();
   const router = useRouter();
   const [otherPartyName, setOtherPartyName] = useState("");
@@ -57,7 +59,7 @@ export default function ChatScreen() {
     setupChat();
 
     socket.on("new-message", (message) => {
-      if (message.senderId === userId) return;
+      if (message.senderId === user?.id) return;
       setMessages((prev) => {
         const exists = prev.find((m) => m.id === message.id);
         if (exists) return prev;
@@ -162,8 +164,8 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior="padding"
-      keyboardVerticalOffset={Platform.select({ ios: 0, android: 80 })}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       {/* Header Personalizado (Opcional si usas Stack) */}
       <View style={styles.header}>
@@ -241,10 +243,16 @@ export default function ChatScreen() {
         )}
       </View>
 
-      <View style={styles.inputArea}>
+      <View
+        style={[
+          styles.inputArea,
+          { paddingBottom: Math.max(insets.bottom, 15) }, // 4. Aplica el margen dinámico
+        ]}
+      >
         <TextInput
           style={styles.input}
           placeholder="Escribe un mensaje..."
+          placeholderTextColor="#999"
           value={newMessage}
           onChangeText={handleInputChange}
           multiline
@@ -313,6 +321,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     backgroundColor: "#F2F2F7",
+    color: "#000000",
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingTop: 10,

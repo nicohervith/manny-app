@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import { Tabs, usePathname, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
@@ -28,16 +29,46 @@ export default function TabLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    if (!user) return;
+    try {
+      const res = await api.get(`/api/chat/list/${user.id}`);
+      const total = res.data.reduce(
+        (acc: number, chat: any) => acc + (chat._count?.messages || 0),
+        0,
+      );
+      setUnreadCount(total);
+    } catch (e) {
+      console.error("Error fetching unread count:", e);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchUnreadCount();
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
 
     const initializeServices = async () => {
       try {
         const token = await registerForPushNotificationsAsync();
+        console.log("Push token obtenido:", token);
+
         if (token) {
-          await api.patch(`/api/users/update-push-token/${user.id}`, {
-            pushToken: token,
-          });
+          console.log("Guardando token para usuario:", user.id);
+          const res = await api.patch(
+            `/api/users/update-push-token/${user.id}`,
+            {
+              pushToken: token,
+            },
+          );
+          console.log("Respuesta guardar token:", res.status);
+        } else {
+          console.log("No se obtuvo token");
         }
       } catch (e) {
         console.warn(
@@ -100,12 +131,19 @@ export default function TabLayout() {
             Toast.hide();
           },
         });
+        setUnreadCount((prev) => prev + 1);
       }
     });
 
     return () => {
       socket.off("new-message");
     };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/chats") {
+      setUnreadCount(0);
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -166,8 +204,36 @@ export default function TabLayout() {
         name="chats"
         options={{
           title: "Mensajes",
+          href: role === "ADMIN" ? null : "/chats",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="chatbubbles" size={24} color={color} />
+            <View>
+              <Ionicons name="chatbubbles" size={24} color={color} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -6,
+                    top: -4,
+                    backgroundColor: "#FF3B30",
+                    borderRadius: 10,
+                    width: 18,
+                    height: 18,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
         }}
       />
