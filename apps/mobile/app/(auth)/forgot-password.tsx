@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -66,6 +65,7 @@ export default function ForgotPasswordScreen() {
           </Text>
           <TextInput
             style={styles.input}
+            placeholderTextColor="#999"
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
@@ -90,6 +90,7 @@ export default function ForgotPasswordScreen() {
           </Text>
           <TextInput
             style={styles.input}
+            placeholderTextColor="#999"
             placeholder="Código de 6 dígitos"
             value={code}
             onChangeText={setCode}
@@ -98,6 +99,7 @@ export default function ForgotPasswordScreen() {
           />
           <TextInput
             style={styles.input}
+            placeholderTextColor="#999"
             placeholder="Nueva Contraseña"
             value={newPassword}
             onChangeText={setNewPassword}
@@ -145,6 +147,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
+    color: "#000",
+    backgroundColor: "#f5f5f5",
   },
   button: {
     backgroundColor: "#007AFF",

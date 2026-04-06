@@ -287,7 +287,7 @@ export default function MyJobsScreen() {
                 )}
 
                 {/* VER POSTULANTES: Solo si está PENDING */}
-                {isPending && (
+                {/* {isPending && (
                   <TouchableOpacity
                     style={styles.viewBidsButton}
                     onPress={() =>
@@ -298,6 +298,37 @@ export default function MyJobsScreen() {
                     }
                   >
                     <Text style={styles.viewBidsText}>Ver Postulantes</Text>
+                  </TouchableOpacity>
+                )} */}
+                {/* VER POSTULANTES: Solo si está PENDING */}
+                {isPending && (
+                  <TouchableOpacity
+                    style={[
+                      styles.viewBidsButton,
+                      item._count?.bids > 0 ? styles.viewBidsButtonActive : {},
+                    ]}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/client/job-bids/[id]",
+                        params: { id: item.id.toString() },
+                      })
+                    }
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="people"
+                        size={18}
+                        color="#fff"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={styles.viewBidsText}>
+                        {item._count?.bids > 0
+                          ? `Ver postulantes (${item._count.bids})`
+                          : "Sin postulantes aún"}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 )}
               </View>
@@ -350,6 +381,7 @@ export default function MyJobsScreen() {
             <TextInput
               style={styles.reviewInput}
               placeholder="Escribe un breve comentario sobre el profesional..."
+              placeholderTextColor="#999"
               multiline
               numberOfLines={4}
               onChangeText={setComment}
@@ -387,6 +419,7 @@ export default function MyJobsScreen() {
 
             <TextInput
               style={styles.reviewInput}
+              placeholderTextColor="#999"
               placeholder="Ej: El trabajador no se presentó, el trabajo quedó incompleto..."
               multiline
               numberOfLines={4}
@@ -487,15 +520,37 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 14,
   },
-  viewBidsButton: {
+  /*  viewBidsButton: {
     borderWidth: 1,
     borderColor: "#007AFF",
     padding: 10,
     borderRadius: 8,
     width: "100%",
     alignItems: "center",
+  }, */
+  /* viewBidsText: { color: "#007AFF", fontWeight: "bold" }, */
+  viewBidsButton: {
+    backgroundColor: "#8E8E93", // Gris si no hay nadie
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 10,
+    alignItems: "center",
   },
-  viewBidsText: { color: "#007AFF", fontWeight: "bold" },
+  viewBidsButtonActive: {
+    backgroundColor: "#34C759", // Verde si hay postulantes (o el azul #007AFF)
+    // Agrega un poquito de sombra para que resalte
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  viewBidsText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
   completedBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -538,6 +593,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     fontSize: 16,
     marginBottom: 20,
+    color: "#000",
   },
   confirmButton: {
     backgroundColor: "#28A745",
@@ -600,4 +656,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#28A745",
   },
+  /*   viewBidsButton: {
+    backgroundColor: "#007AFF", // o el color que estés usando
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewBidsText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  }, */
+  countBadgeText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+    marginLeft: 5, // Espacio entre el texto y el número
+  },
+  countBadge: {},
 });

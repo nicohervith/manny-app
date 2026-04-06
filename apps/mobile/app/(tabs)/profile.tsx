@@ -47,7 +47,7 @@ export default function ProfileScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // Forzar cuadrado para avatar
+      aspect: [1, 1], 
       quality: 0.5,
     });
 
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
   };
 
   const handleUploadAvatar = async (uri: string) => {
-    if (!user?.id) return; // Seguridad
+    if (!user?.id) return; 
     setUploading(true);
     try {
       const formData = new FormData();
@@ -75,8 +75,6 @@ export default function ProfileScreen() {
         formData,
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-
-      // El contexto se encarga de actualizar SecureStore
       updateUser({ avatar: response.data.user.avatar });
       alert("Foto de perfil actualizada.");
     } catch (error) {

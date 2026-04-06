@@ -2,17 +2,19 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { createServer } from "http";
+import cron from "node-cron";
 import { Server } from "socket.io";
+import { notifyNearbyJobs } from "../src/services/notification.service.js";
 import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import bidRoutes from "./routes/bid.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import disputeRoutes from "./routes/dispute.routes.js";
 import jobRoutes from "./routes/job.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import reviewRoutes from "./routes/reviews.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import workerRoutes from "./routes/worker.routes.js";
-import disputeRoutes from "./routes/dispute.routes.js";
 
 dotenv.config();
 
@@ -21,20 +23,17 @@ const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-const httpServer = createServer(app); // Creamos el servidor HTTP
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // En desarrollo permitimos todo
+    origin: "*",
   },
 });
 
-// Lógica de Socket.io
 io.on("connection", (socket) => {
   console.log("👤 Usuario conectado:", socket.id);
-
-  // Unirse a una "sala" específica de un trabajo
   socket.on("join-chat", (jobId) => {
-    socket.join(`chat_${jobId}`); // Importante que el string coincida con el del emit
+    socket.join(`chat_${jobId}`);
     console.log(`Sala chat_${jobId} unida por socket ${socket.id}`);
   });
 
@@ -42,7 +41,6 @@ io.on("connection", (socket) => {
     socket.to(`chat_${jobId}`).emit("user-typing", { userName });
   });
 
-  // Evento cuando alguien deja de escribir
   socket.on("stop-typing", (jobId) => {
     socket.to(`chat_${jobId}`).emit("user-stop-typing");
   });
@@ -52,10 +50,13 @@ io.on("connection", (socket) => {
   });
 });
 
-// Compartir 'io' con las rutas si es necesario
+cron.schedule("0 9 * * *", () => {
+  console.log("Ejecutando notificación diaria de trabajos cercanos...");
+  notifyNearbyJobs();
+});
+
 app.set("io", io);
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 

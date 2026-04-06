@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Manny Oficios Cerca",
     slug: "manny-oficios-cerca",
-    version: "1.0.9",
+    version: "1.1.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "manny-oficios-cerca",
@@ -12,7 +12,7 @@ export default {
       supportsTablet: true,
     },
     android: {
-      versionCode: 24,
+      versionCode: 25,
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#E6F4FE",

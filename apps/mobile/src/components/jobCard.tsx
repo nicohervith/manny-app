@@ -18,7 +18,9 @@ interface JobCardProps {
 
 export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const jobImages = item.images ? item.images.split(",") : [];
+  const isLongDescription = item.description?.length > 120;
 
   return (
     <View style={styles.jobCard}>
@@ -39,7 +41,7 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
           showsHorizontalScrollIndicator={false}
           style={styles.imageScroll}
         >
-          {jobImages.map((imgUrl, index) => (
+          {jobImages.map((imgUrl:any, index:any) => (
             <TouchableOpacity
               key={index}
               onPress={() => setSelectedImg(imgUrl)} // Seteamos la imagen para abrir el modal
@@ -55,9 +57,20 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
         </ScrollView>
       )}
 
-      <Text style={styles.description} numberOfLines={3}>
-        {item.description} {/* Cambiado de descripcion a description */}
+      <Text style={styles.description} numberOfLines={expanded ? undefined : 3}>
+        {item.description}
       </Text>
+
+      {isLongDescription && (
+        <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
+          style={styles.expandButton}
+        >
+          <Text style={styles.expandText}>
+            {expanded ? "Ver menos ▲" : "Ver más ▼"}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.footer}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -133,7 +146,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 8,
     marginRight: 10,
-    backgroundColor: "#F0F0F0", 
+    backgroundColor: "#F0F0F0",
   },
   description: { color: "#555", marginBottom: 10, lineHeight: 20 },
   footer: {
@@ -159,5 +172,14 @@ const styles = StyleSheet.create({
     height: 35,
     borderRadius: 17.5,
     backgroundColor: "#eee",
+  },
+  expandButton: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  expandText: {
+    fontSize: 13,
+    color: "#007AFF",
+    fontWeight: "500",
   },
 });

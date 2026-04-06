@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import {
   Alert,
@@ -8,8 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface ApplyBidModalProps {
   visible: boolean;
@@ -21,6 +21,7 @@ interface ApplyBidModalProps {
     availableTo: string;
   }) => void;
   jobTitle?: string;
+  jobDescription?: string;
 }
 
 export default function ApplyBidModal({
@@ -28,6 +29,7 @@ export default function ApplyBidModal({
   onClose,
   onSubmit,
   jobTitle,
+  jobDescription,
 }: ApplyBidModalProps) {
   const [formData, setFormData] = useState({
     price: "",
@@ -60,9 +62,19 @@ export default function ApplyBidModal({
           <Text style={styles.modalTitle}>Enviar Propuesta</Text>
           <Text style={styles.modalSubtitle}>{jobTitle}</Text>
 
+          {jobDescription && (
+            <View style={styles.descriptionBox}>
+              <Text style={styles.descriptionTitle}>
+                Descripción del trabajo:
+              </Text>
+              <Text style={styles.descriptionText}>{jobDescription}</Text>
+            </View>
+          )}
+
           <Text style={styles.label}>Tu Precio ($)</Text>
           <TextInput
             style={styles.modalInput}
+            placeholderTextColor="#999"
             placeholder="Ej: 5000"
             keyboardType="numeric"
             value={formData.price}
@@ -127,6 +139,7 @@ export default function ApplyBidModal({
           <Text style={styles.label}>Mensaje al cliente</Text>
           <TextInput
             style={[styles.modalInput, { height: 80 }]}
+            placeholderTextColor="#999"
             placeholder="Cuéntale por qué eres el indicado..."
             multiline
             value={formData.message}
@@ -158,6 +171,27 @@ const styles = StyleSheet.create({
   },
   modalContent: { backgroundColor: "#fff", borderRadius: 20, padding: 25 },
   modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
+  descriptionBox: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: "#007AFF",
+  },
+  descriptionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#666",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: "#333",
+    lineHeight: 20,
+  },
   modalSubtitle: { color: "#007AFF", marginBottom: 20 },
   modalInput: {
     backgroundColor: "#F0F2F5",

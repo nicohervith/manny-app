@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router"; // 1. Agregamos useFocusEffect
+import { useFocusEffect, useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -14,10 +16,17 @@ import {
 import { useAuth } from "../../src/context/AuthContext";
 import api from "../../src/services/api";
 
+interface Bids {
+  id: number;
+  price: number;
+  status: string;
+  job: any;
+}
+
 export default function MyBidsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [myBids, setMyBids] = useState([]);
+  const [myBids, setMyBids] = useState<Bids[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -183,6 +192,36 @@ export default function MyBidsScreen() {
                   </Text>
                 )}
               </View>
+
+              {/* INFO DE UBICACIÓN (Solo si fue aceptado) */}
+              {isAccepted && item.job?.address && (
+                <View style={styles.locationCard}>
+                  <View style={styles.locationHeader}>
+                    <Ionicons name="location" size={18} color="#FF3B30" />
+                    <Text style={styles.locationTitle}>
+                      Dirección del servicio
+                    </Text>
+                  </View>
+
+                  <Text style={styles.addressText}>{item.job.address}</Text>
+
+                  <TouchableOpacity
+                    style={styles.mapButton}
+                    onPress={() => {
+                      const query = encodeURIComponent(item.job.address);
+                      const url = Platform.select({
+                        ios: `maps:0,0?q=${query}`,
+                        android: `geo:0,0?q=${query}`,
+                        default: `https://www.google.com/maps/search/?api=1&query=${query}`,
+                      });
+                      WebBrowser.openBrowserAsync(url);
+                    }}
+                  >
+                    <Ionicons name="map-outline" size={16} color="#007AFF" />
+                    <Text style={styles.mapButtonText}>Abrir en GPS</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {isAccepted && (
                 <TouchableOpacity
@@ -365,4 +404,44 @@ const styles = StyleSheet.create({
   },
   earningsTotalLabel: { fontSize: 14, fontWeight: "700", color: "#333" },
   earningsTotalValue: { fontSize: 14, fontWeight: "700", color: "#28A745" },
+  locationCard: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: "#E9ECEF",
+  },
+  locationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  locationTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#495057",
+    marginLeft: 5,
+    textTransform: "uppercase",
+  },
+  addressText: {
+    fontSize: 15,
+    color: "#212529",
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  mapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E7F1FF",
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  mapButtonText: {
+    color: "#007AFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
 });

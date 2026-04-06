@@ -48,7 +48,10 @@ export const sendMessage = async (req: Request, res: Response) => {
         targetToken,
         fullMessage.sender.name,
         content,
-        { jobId: jobId.toString(), type: "CHAT" },
+        { 
+      jobId: jobId.toString(),
+      type: "CHAT"
+    },
       );
     }
 

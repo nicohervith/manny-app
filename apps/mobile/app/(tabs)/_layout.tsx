@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { io } from "socket.io-client";
+import { IconWithBadge } from "../../src/components/ui/IconWithBadge";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
 import { registerForPushNotificationsAsync } from "../../src/hooks/usePushNotifications";
@@ -30,6 +31,23 @@ export default function TabLayout() {
   const router = useRouter();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newBidsCount, setNewBidsCount] = useState(0);
+
+  const fetchNewBidsCount = async () => {
+    if (!user || user.role !== "CLIENT") return;
+    try {
+      const res = await api.get(`/api/jobs/client/${user.id}`);
+      const totalNewBids = res.data.reduce((acc: number, job: any) => {
+        const pendingInJob =
+          job.bids?.filter((bid: any) => bid.status === "PENDING").length || 0;
+        return acc + pendingInJob;
+      }, 0);
+
+      setNewBidsCount(totalNewBids);
+    } catch (e) {
+      console.error("Error fetching bids count:", e);
+    }
+  };
 
   const fetchUnreadCount = async () => {
     if (!user) return;
@@ -109,11 +127,21 @@ export default function TabLayout() {
         if (type === "JOB_COMPLETED" && jobId) {
           router.push(`/(tabs)/my-jobs`);
         }
+        if (type === "NEARBY_JOBS") {
+          router.push("/(tabs)/worker-feed");
+        }
+
+        if (type === "CHAT" && jobId) {
+          router.push({
+            pathname: "/chat/[jobId]",
+            params: { jobId: jobId.toString() },
+          });
+        }
       },
     );
 
     return () => subscription.remove();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     socket.on("new-message", (message) => {
@@ -160,6 +188,35 @@ export default function TabLayout() {
       router.replace("/verify-workers");
     }
   }, [user, pathname]);
+
+  useEffect(() => {
+    if (user?.role === "CLIENT") {
+      fetchNewBidsCount();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    socket.on("new-bid", (data) => {
+      if (user?.role === "CLIENT") {
+        setNewBidsCount((prev) => prev + 1);
+        Toast.show({
+          type: "info",
+          text1: "¡Nueva oferta recibida!",
+          text2: "Un profesional se ha postulado a tu trabajo.",
+        });
+      }
+    });
+
+    return () => {
+      socket.off("new-bid");
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (pathname === "/my-jobs") {
+      setNewBidsCount(0);
+    }
+  }, [pathname]);
 
   if (!user) return null;
 
@@ -244,7 +301,7 @@ export default function TabLayout() {
           title: "Mis Pedidos",
           href: role === "CLIENT" ? "/my-jobs" : (null as any),
           tabBarIcon: ({ color }) => (
-            <Ionicons name="list" size={24} color={color} />
+            <IconWithBadge name="list" color={color} count={newBidsCount} />
           ),
         }}
       />

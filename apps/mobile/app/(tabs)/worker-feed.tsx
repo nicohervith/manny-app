@@ -13,15 +13,27 @@ import {
   View,
 } from "react-native";
 import MapView, { Callout, Circle, Marker } from "react-native-maps";
+import ApplyBidModal from "../../src/components/ApplyBidModal";
 import { JobCard } from "../../src/components/jobCard";
 import { useAuth } from "../../src/context/AuthContext";
-
-import ApplyBidModal from "../../src/components/ApplyBidModal";
 import api from "../../src/services/api";
+
+interface Job {
+  id: number;
+  title: string;
+  description: string;
+  budget: number;
+  latitude: number;
+  longitude: number;
+  _count?: {
+    bids: number;
+  };
+  bids?: any[];
+}
 
 export default function WorkerFeedScreen() {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [location, setLocation] =
@@ -161,7 +173,7 @@ export default function WorkerFeedScreen() {
             alignItems: "center",
           }}
         >
-          <Text style={styles.title}>Available Jobs</Text>
+          <Text style={styles.title}>Trabajos disponibles</Text>
 
           {/* BOTÓN PARA CAMBIAR ENTRE LISTA Y MAPA */}
           <TouchableOpacity
@@ -203,7 +215,7 @@ export default function WorkerFeedScreen() {
 
       {viewMode === "list" ? (
         <FlatList
-          data={filteredJobs} // Usamos la lista filtrada
+          data={filteredJobs}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => {
             const distance =
@@ -256,7 +268,6 @@ export default function WorkerFeedScreen() {
               <Marker coordinate={location} title="Tu ubicación" zIndex={1} />
             )}
 
-            {/* Marcadores de los trabajos filtrados */}
             {filteredJobs.map((job) => (
               <Marker
                 key={job.id}
@@ -265,7 +276,7 @@ export default function WorkerFeedScreen() {
                   longitude: job.longitude,
                 }}
                 zIndex={10}
-                onPress={() => handlePressApply(job)} // ← al tocar el marcador abre el modal
+                onPress={() => handlePressApply(job)}
               >
                 <View style={styles.customMarker}>
                   <Ionicons name="briefcase" size={20} color="#fff" />
@@ -299,6 +310,7 @@ export default function WorkerFeedScreen() {
       <ApplyBidModal
         visible={modalVisible}
         jobTitle={selectedJob?.title}
+        jobDescription={selectedJob?.description}
         onClose={() => setModalVisible(false)}
         onSubmit={handleApplyAction}
       />

@@ -35,7 +35,10 @@ export const sendMessage = async (req, res) => {
         console.log("targetToken:", targetToken);
         console.log("==================");
         if (targetToken) {
-            await sendPushNotification(targetToken, fullMessage.sender.name, content, { jobId: jobId.toString(), type: "CHAT" });
+            await sendPushNotification(targetToken, fullMessage.sender.name, content, {
+                jobId: jobId.toString(),
+                type: "CHAT"
+            });
         }
         res.json(fullMessage);
     }
