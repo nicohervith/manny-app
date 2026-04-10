@@ -21,6 +21,17 @@ export const completeProfile = async (req, res) => {
         const dniFrontUrl = files?.["dniFront"]?.[0]?.path || null;
         const dniBackUrl = files?.["dniBack"]?.[0]?.path || null;
         const selfieUrl = files?.["selfie"]?.[0]?.path || null;
+        const existing = await prisma.workerProfile.findUnique({
+            where: { userId: parseInt(userId) },
+            select: { dniFront: true, dniBack: true, selfie: true },
+        });
+        const finalDniFront = dniFrontUrl || existing?.dniFront;
+        const finalDniBack = dniBackUrl || existing?.dniBack;
+        const finalSelfie = selfieUrl || existing?.selfie;
+        const hasAllPhotos = !!finalDniFront && !!finalDniBack && !!finalSelfie;
+        const hasLocation = !!latitude;
+        const hasDni = !!dni;
+        const verificationStatus = hasAllPhotos && hasLocation && hasDni ? "PENDING" : "INCOMPLETE";
         const profile = await prisma.workerProfile.upsert({
             where: { userId: parseInt(userId) },
             update: {
@@ -33,7 +44,7 @@ export const completeProfile = async (req, res) => {
                 ...(dniFrontUrl && { dniFront: dniFrontUrl }),
                 ...(dniBackUrl && { dniBack: dniBackUrl }),
                 ...(selfieUrl && { selfie: selfieUrl }),
-                verification: "PENDING",
+                verification: verificationStatus,
                 tags: { set: [], connectOrCreate: tagsData },
             },
             create: {
@@ -47,7 +58,7 @@ export const completeProfile = async (req, res) => {
                 dniFront: dniFrontUrl,
                 dniBack: dniBackUrl,
                 selfie: selfieUrl,
-                verification: "PENDING",
+                verification: verificationStatus,
                 tags: { connectOrCreate: tagsData },
             },
         });
