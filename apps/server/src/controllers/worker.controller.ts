@@ -102,7 +102,10 @@ export const listWorkers = async (req: Request, res: Response) => {
   try {
     const { tag } = req.query;
     const workers = await prisma.workerProfile.findMany({
-      where: tag ? { tags: { some: { name: tag as string } } } : {},
+      where: {
+        verification: "VERIFIED", 
+        ...(tag ? { tags: { some: { name: tag as string } } } : {}),
+      },
       include: {
         tags: true,
         user: {
@@ -112,13 +115,30 @@ export const listWorkers = async (req: Request, res: Response) => {
             email: true,
             avatar: true,
             lastSeen: true,
+            receivedReviews: { select: { rating: true } }, 
           },
         },
       },
     });
-    res.json(workers);
+
+    // Calcular promedio y ordenar
+    const workersWithRating = workers.map((w) => {
+      const reviews = w.user.receivedReviews;
+      const avgRating =
+        reviews.length > 0
+          ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+          : 0;
+      return { ...w, averageRating: avgRating, totalReviews: reviews.length };
+    });
+
+    workersWithRating.sort((a, b) => {
+      if (b.totalReviews !== a.totalReviews)
+        return b.totalReviews - a.totalReviews;
+      return b.averageRating - a.averageRating;
+    });
+
+    res.json(workersWithRating);
   } catch (error) {
-    console.error("Error fetching workers:", error);
     res.status(500).json({ error: "Error fetching workers" });
   }
 };

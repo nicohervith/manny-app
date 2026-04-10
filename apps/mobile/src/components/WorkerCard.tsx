@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export const WorkerCard = ({ item }: { item: any }) => {
@@ -7,7 +8,16 @@ export const WorkerCard = ({ item }: { item: any }) => {
     new Date().getTime() - new Date(item.user.lastSeen).getTime() <
       5 * 60 * 1000;
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.8}
+      onPress={() =>
+        router.push({
+          pathname: "/client/worker-profile/[id]",
+          params: { id: item.user.id },
+        })
+      }
+    >
       <View style={styles.imageContainer}>
         <Image source={{ uri: item.user.avatar }} style={styles.avatar} />
 
@@ -31,8 +41,12 @@ export const WorkerCard = ({ item }: { item: any }) => {
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={14} color="#FFD700" />
           <Text style={styles.ratingText}>
-            {item.rating}{" "}
-            <Text style={styles.reviewsText}>({item.totalReviews || 0})</Text>
+            {item.averageRating > 0
+              ? Number(item.averageRating).toFixed(1)
+              : "Nuevo"}{" "}
+            <Text style={styles.reviewsText}>
+              ({item.totalReviews || 0} reseñas)
+            </Text>
           </Text>
         </View>
       </View>
