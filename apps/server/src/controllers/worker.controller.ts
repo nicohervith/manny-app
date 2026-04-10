@@ -184,7 +184,7 @@ export const getWorkerVerificationStatus = async (
     where: { userId: parseInt(req.params.userId as string) },
     select: { verification: true },
   });
-  res.json({ verification: profile?.verification || "NONE" });
+  res.json({ verification: profile?.verification || "NOT_STARTED" });
 };
 
 export const saveDraft = async (req: Request, res: Response) => {
@@ -216,13 +216,14 @@ export const saveDraft = async (req: Request, res: Response) => {
               })),
             }
           : undefined,
+        verification: "DRAFT",
       },
       create: {
         userId: parseInt(userId),
         occupation: occupation || "",
         description: description || "",
         dni: "",
-        verification: "PENDING",
+        verification: "DRAFT",
       },
     });
     res.json({ message: "Borrador guardado", profile });

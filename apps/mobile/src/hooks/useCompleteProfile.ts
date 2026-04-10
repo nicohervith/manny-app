@@ -277,14 +277,18 @@ export function useCompleteProfile() {
   };
 
   const saveProfile = async () => {
-    if (!form.latitude || !form.hourlyRate || !form.dni) {
-      Alert.alert("Error", "Completa los campos obligatorios y ubicación.");
+    const hasImages = images.dniFront && images.dniBack && images.selfie;
+    const hasLocation = form.latitude && form.longitude;
+    const hasBasicInfo = form.occupation && form.dni && form.hourlyRate;
+
+    if (!hasBasicInfo || !hasLocation || !hasImages) {
+      Alert.alert(
+        "Perfil incompleto",
+        "Para enviar a revisión debes completar la info básica, tu ubicación y las 3 fotos del DNI.",
+      );
       return;
     }
-    if (!isEditing && (!images.dniFront || !images.dniBack || !images.selfie)) {
-      Alert.alert("Validación", "Sube las 3 fotos de identidad.");
-      return;
-    }
+
     setLoading(true);
     try {
       const userDataRaw = await SecureStore.getItemAsync("userData");
@@ -318,8 +322,7 @@ export function useCompleteProfile() {
       await api.post(`/api/worker/complete-profile`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      Alert.alert("Éxito", "Perfil enviado a revisión.");
+      Alert.alert("Éxito", "Tu perfil ha sido enviado y será revisado pronto.");
       router.replace("/(tabs)/worker-feed");
     } catch (error: any) {
       console.error(error.response?.data || error.message);

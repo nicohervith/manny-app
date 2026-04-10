@@ -98,9 +98,17 @@ export default function WorkerFeedScreen() {
       const { verification } = res.data;
 
       if (verification !== "VERIFIED") {
+        const messages: Record<string, string> = {
+          NOT_STARTED: "Todavía no completaste tu perfil profesional.",
+          DRAFT: "Completá y enviá tu perfil para poder postularte.",
+          INCOMPLETE: "Tu perfil está incompleto. Terminá de cargarlo.",
+          PENDING: "Tu perfil está siendo revisado. Te avisaremos pronto.",
+          REJECTED: "Tu perfil fue rechazado. Revisá los documentos enviados.",
+        };
+
         Alert.alert(
           "Verificación Requerida",
-          `Tu cuenta está en estado: ${verification}`,
+          messages[verification] || `Estado: ${verification}`,
           [
             { text: "Cerrar" },
             {

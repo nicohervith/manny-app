@@ -189,6 +189,8 @@ model Transaction {
 
 enum VerificationStatus {
   NOT_STARTED
+  DRAFT
+  INCOMPLETE
   PENDING    // Subió los documentos, esperando que el Admin apruebe
   VERIFIED   // Todo ok, puede postularse
   REJECTED   // Los documentos no eran legibles o eran falsos
