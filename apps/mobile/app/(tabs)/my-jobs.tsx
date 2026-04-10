@@ -199,8 +199,8 @@ export default function MyJobsScreen() {
         renderItem={({ item }) => {
           const isPending = item.status === "PENDING";
           const isInProgress = item.status === "IN_PROGRESS";
-          const isCompleted = item.status === "COMPLETED"; // El trabajador marcó como terminado
-          const isPaid = item.status === "PAID"; // Webhook confirmó el pago
+          const isCompleted = item.status === "COMPLETED"; 
+          const isPaid = item.status === "PAID"; 
           const hasBeenRated = !!item.review;
 
           return (

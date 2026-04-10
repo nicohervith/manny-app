@@ -2,23 +2,16 @@ import { prisma } from "../lib/prisma.js";
 export const reviews = async (req, res) => {
     try {
         const { jobId, rating, comment, reviewerId, workerId } = req.body;
-        const result = await prisma.$transaction(async (tx) => {
-            const newReview = await tx.review.create({
-                data: {
-                    jobId: parseInt(jobId),
-                    rating: parseInt(rating),
-                    comment,
-                    reviewerId: parseInt(reviewerId),
-                    workerId: parseInt(workerId),
-                },
-            });
-            await tx.job.update({
-                where: { id: parseInt(jobId) },
-                data: { status: "COMPLETED" },
-            });
-            return newReview;
+        const newReview = await prisma.review.create({
+            data: {
+                jobId: parseInt(jobId),
+                rating: parseInt(rating),
+                comment: comment || null,
+                reviewerId: parseInt(reviewerId),
+                workerId: parseInt(workerId),
+            },
         });
-        res.status(201).json(result);
+        res.status(201).json(newReview);
     }
     catch (error) {
         console.error("Error al procesar la reseña:", error);
