@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { completeProfile, completeWorkerJob, getWorkerProfile, getWorkerVerificationStatus, listWorkers, verifyWorkerStatus, } from "../controllers/worker.controller.js";
+import { completeProfile, completeWorkerJob, getWorkerProfile, getWorkerVerificationStatus, listWorkers, saveDraft, verifyWorkerStatus, } from "../controllers/worker.controller.js";
 import { upload } from "../lib/cloudinary.js";
 import { authenticateToken, isAdmin } from "../middlewares/auth.middleware.js";
 const router = Router();
@@ -24,4 +24,5 @@ router.get("/profile/:userId", authenticateToken, getWorkerProfile);
 router.patch("/:id/complete-worker", authenticateToken, completeWorkerJob);
 router.patch("/verify-worker/:userId", authenticateToken, isAdmin, verifyWorkerStatus);
 router.get("/status/:userId", authenticateToken, getWorkerVerificationStatus);
+router.post("/save-draft", authenticateToken, saveDraft);
 export default router;

@@ -2,8 +2,9 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 
 export type ProfileImages = {
@@ -37,8 +38,8 @@ const DEFAULT_REGION: MapRegion = {
 };
 
 export function useCompleteProfile() {
+  const { user } = useAuth();
   const router = useRouter();
-
   const [loading, setLoading] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -63,6 +64,44 @@ export function useCompleteProfile() {
     dniBack: null,
     selfie: null,
   });
+
+  const profileCompletion = useMemo(() => {
+    const checks = [
+      !!form.occupation,
+      !!form.dni,
+      !!form.description,
+      !!form.hourlyRate,
+      !!form.latitude,
+      form.tags.length > 0,
+      !!images.dniFront,
+      !!images.dniBack,
+      !!images.selfie,
+    ];
+    const completed = checks.filter(Boolean).length;
+    return Math.round((completed / checks.length) * 100);
+  }, [form, images]);
+
+  const saveDraft = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      await api.post("/api/worker/save-draft", {
+        userId: user.id,
+        occupation: form.occupation,
+        description: form.description,
+        hourlyRate: form.hourlyRate,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        tags: JSON.stringify(form.tags),
+      });
+    } catch (e) {
+      console.error("Error guardando borrador:", e);
+    }
+  }, [form, user]);
+
+  useEffect(() => {
+    const interval = setInterval(saveDraft, 30000);
+    return () => clearInterval(interval);
+  }, [saveDraft]);
 
   const loadExistingProfile = async () => {
     try {
@@ -310,5 +349,6 @@ export function useCompleteProfile() {
     searchManualAddress,
     handlePressVerify,
     saveProfile,
+    profileCompletion,
   };
 }

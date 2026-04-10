@@ -24,6 +24,32 @@ export default function ProfileScreen() {
 
   const [isMpLinked, setIsMpLinked] = useState(false);
 
+  const [profileCompletion, setProfileCompletion] = useState(0);
+
+  useEffect(() => {
+    if (role !== "WORKER" || !user?.id) return;
+    const fetchCompletion = async () => {
+      try {
+        const res = await api.get(`/api/worker/profile/${user.id}`);
+        const p = res.data;
+        const checks = [
+          !!p.occupation,
+          !!p.dni,
+          !!p.description,
+          !!p.hourlyRate,
+          !!p.latitude,
+          p.tags?.length > 0,
+          !!p.dniFront,
+          !!p.dniBack,
+          !!p.selfie,
+        ];
+        const completed = checks.filter(Boolean).length;
+        setProfileCompletion(Math.round((completed / checks.length) * 100));
+      } catch (e) {}
+    };
+    fetchCompletion();
+  }, [user]);
+
   useEffect(() => {
     if (role !== "WORKER" || !user?.id) return;
     const checkMpStatus = async () => {
@@ -47,7 +73,7 @@ export default function ProfileScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], 
+      aspect: [1, 1],
       quality: 0.5,
     });
 
@@ -57,7 +83,7 @@ export default function ProfileScreen() {
   };
 
   const handleUploadAvatar = async (uri: string) => {
-    if (!user?.id) return; 
+    if (!user?.id) return;
     setUploading(true);
     try {
       const formData = new FormData();
@@ -140,6 +166,29 @@ export default function ProfileScreen() {
 
       {role === "WORKER" && (
         <>
+          {profileCompletion < 100 && (
+            <View style={styles.completionContainer}>
+              <View style={styles.completionHeader}>
+                <Text style={styles.completionLabel}>Perfil completado</Text>
+                <Text style={styles.completionPercent}>
+                  {profileCompletion}%
+                </Text>
+              </View>
+              <View style={styles.progressBarBg}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${profileCompletion}%` },
+                  ]}
+                />
+              </View>
+              {profileCompletion < 100 && (
+                <Text style={styles.completionHint}>
+                  Completá tu perfil para recibir más trabajos
+                </Text>
+              )}
+            </View>
+          )}
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => router.push("/worker/complete-profile")}
@@ -148,6 +197,7 @@ export default function ProfileScreen() {
             <Text style={styles.menuText}>Editar Perfil Profesional</Text>
             <Ionicons name="chevron-forward" size={20} color="#CCC" />
           </TouchableOpacity>
+
           {isMpLinked ? (
             <View
               style={[
@@ -274,5 +324,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#555",
     lineHeight: 18,
+  },
+  completionContainer: {
+    backgroundColor: "#F0F6FF",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#D0E4FF",
+  },
+  completionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  completionLabel: { fontSize: 14, fontWeight: "600", color: "#333" },
+  completionPercent: { fontSize: 14, fontWeight: "700", color: "#007AFF" },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: "#D0E4FF",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: 8,
+    backgroundColor: "#007AFF",
+    borderRadius: 4,
+  },
+  completionHint: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 6,
   },
 });

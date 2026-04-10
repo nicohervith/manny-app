@@ -162,3 +162,38 @@ export const getWorkerVerificationStatus = async (req, res) => {
     });
     res.json({ verification: profile?.verification || "NONE" });
 };
+export const saveDraft = async (req, res) => {
+    const { userId, occupation, description, hourlyRate, latitude, longitude, tags, } = req.body;
+    try {
+        const profile = await prisma.workerProfile.upsert({
+            where: { userId: parseInt(userId) },
+            update: {
+                occupation: occupation || undefined,
+                description: description || undefined,
+                hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+                latitude: latitude ? parseFloat(latitude) : undefined,
+                longitude: longitude ? parseFloat(longitude) : undefined,
+                tags: tags
+                    ? {
+                        set: [],
+                        connectOrCreate: JSON.parse(tags).map((name) => ({
+                            where: { name },
+                            create: { name },
+                        })),
+                    }
+                    : undefined,
+            },
+            create: {
+                userId: parseInt(userId),
+                occupation: occupation || "",
+                description: description || "",
+                dni: "",
+                verification: "PENDING",
+            },
+        });
+        res.json({ message: "Borrador guardado", profile });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Error al guardar borrador" });
+    }
+};

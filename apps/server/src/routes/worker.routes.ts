@@ -5,6 +5,7 @@ import {
   getWorkerProfile,
   getWorkerVerificationStatus,
   listWorkers,
+  saveDraft,
   verifyWorkerStatus,
 } from "../controllers/worker.controller.js";
 import { upload } from "../lib/cloudinary.js";
@@ -45,5 +46,6 @@ router.patch(
   verifyWorkerStatus,
 );
 router.get("/status/:userId", authenticateToken, getWorkerVerificationStatus);
+router.post("/save-draft", authenticateToken, saveDraft);
 
 export default router;
