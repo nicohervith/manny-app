@@ -10,8 +10,19 @@ import {
 import { useAuth } from "../../src/context/AuthContext";
 import api from "../../src/services/api";
 
+interface Chat {
+  id: string | number;
+  clientId: string | number;
+  worker: { name: string };
+  client: { name: string };
+  title: string;
+  messages: Array<{ id: number; content: string }>;
+  _count: { messages: number };
+  status: string;
+}
+
 export default function ChatListScreen() {
-  const [chats, setChats] = useState([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const { user } = useAuth();
   const router = useRouter();
 
