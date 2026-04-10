@@ -92,6 +92,7 @@ export const getClientJobs = async (req, res) => {
                     select: { bids: true },
                 },
                 review: true,
+                worker: { select: { name: true } },
                 bids: {
                     include: {
                         worker: {

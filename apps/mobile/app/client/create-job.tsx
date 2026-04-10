@@ -250,6 +250,14 @@ export default function CreateJobScreen() {
           </View>
         </View>
 
+        <View style={styles.trustBanner}>
+          <Ionicons name="shield-checkmark" size={20} color="#28A745" />
+          <Text style={styles.trustText}>
+            Si no recibís postulaciones en las primeras horas, te asignaremos
+            uno de nuestros profesionales verificados sin costo adicional.
+          </Text>
+        </View>
+
         <TouchableOpacity
           style={[
             styles.button,
@@ -412,5 +420,22 @@ const styles = StyleSheet.create({
     right: -10,
     backgroundColor: "#fff",
     borderRadius: 12,
+  },
+  trustBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#E8F5E9",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#C8E6C9",
+  },
+  trustText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#2E7D32",
+    lineHeight: 18,
   },
 });

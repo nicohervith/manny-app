@@ -134,7 +134,7 @@ export default function MyJobsScreen() {
         workerId: selectedJob.workerId,
         reviewerId: selectedJob.clientId,
         rating: rating,
-        comment: comment,
+        comment: comment.trim() || null,
       });
 
       Alert.alert("¡Éxito!", "Tu calificación ha sido enviada.");
@@ -165,6 +165,30 @@ export default function MyJobsScreen() {
       default:
         return status;
     }
+  };
+
+  const handleCancelJob = (jobId: number) => {
+    Alert.alert(
+      "Cancelar publicación",
+      "¿Estás seguro? Se eliminarán todas las postulaciones recibidas.",
+      [
+        { text: "No, mantener", style: "cancel" },
+        {
+          text: "Sí, cancelar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.patch(`/api/jobs/${jobId}/status`, {
+                status: "CANCELLED",
+              });
+              fetchMyJobs();
+            } catch (e) {
+              Alert.alert("Error", "No se pudo cancelar el trabajo.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -287,49 +311,51 @@ export default function MyJobsScreen() {
                 )}
 
                 {/* VER POSTULANTES: Solo si está PENDING */}
-                {/* {isPending && (
-                  <TouchableOpacity
-                    style={styles.viewBidsButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/client/job-bids/[id]",
-                        params: { id: item.id.toString() },
-                      })
-                    }
-                  >
-                    <Text style={styles.viewBidsText}>Ver Postulantes</Text>
-                  </TouchableOpacity>
-                )} */}
-                {/* VER POSTULANTES: Solo si está PENDING */}
                 {isPending && (
-                  <TouchableOpacity
-                    style={[
-                      styles.viewBidsButton,
-                      item._count?.bids > 0 ? styles.viewBidsButtonActive : {},
-                    ]}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/client/job-bids/[id]",
-                        params: { id: item.id.toString() },
-                      })
-                    }
-                  >
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                  <View>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewBidsButton,
+                        item._count?.bids > 0
+                          ? styles.viewBidsButtonActive
+                          : {},
+                      ]}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/client/job-bids/[id]",
+                          params: { id: item.id.toString() },
+                        })
+                      }
+                    >
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Ionicons
+                          name="people"
+                          size={18}
+                          color="#fff"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={styles.viewBidsText}>
+                          {item._count?.bids > 0
+                            ? `Ver postulantes (${item._count.bids})`
+                            : "Sin postulantes aún"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.cancelJobButton}
+                      onPress={() => handleCancelJob(item.id)}
                     >
                       <Ionicons
-                        name="people"
-                        size={18}
-                        color="#fff"
-                        style={{ marginRight: 8 }}
+                        name="close-circle-outline"
+                        size={16}
+                        color="#DC3545"
                       />
-                      <Text style={styles.viewBidsText}>
-                        {item._count?.bids > 0
-                          ? `Ver postulantes (${item._count.bids})`
-                          : "Sin postulantes aún"}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                      <Text style={styles.cancelJobText}>Cancelar</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
 
@@ -363,7 +389,11 @@ export default function MyJobsScreen() {
 
             <Text style={styles.modalTitle}>¡Trabajo Terminado!</Text>
             <Text style={styles.modalSubtitle}>
-              ¿Cómo calificarías el servicio?
+              ¿Cómo calificarías el servicio de{" "}
+              <Text style={{ fontWeight: "bold", color: "#333" }}>
+                {selectedJob?.worker?.name || "el profesional"}
+              </Text>
+              ?
             </Text>
 
             <View style={styles.starsRow}>
@@ -656,24 +686,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#28A745",
   },
-  /*   viewBidsButton: {
-    backgroundColor: "#007AFF", // o el color que estés usando
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  viewBidsText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  }, */
   countBadgeText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
-    marginLeft: 5, // Espacio entre el texto y el número
+    marginLeft: 5,
   },
   countBadge: {},
+  cancelJobButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DC3545",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    gap: 4,
+  },
+  cancelJobText: {
+    color: "#DC3545",
+    fontWeight: "600",
+    fontSize: 13,
+  },
 });

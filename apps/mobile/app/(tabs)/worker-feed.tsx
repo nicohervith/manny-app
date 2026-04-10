@@ -181,7 +181,7 @@ export default function WorkerFeedScreen() {
             alignItems: "center",
           }}
         >
-          <Text style={styles.title}>Trabajos disponibles</Text>
+          <Text style={styles.title}>Trabajos activos</Text>
 
           {/* BOTÓN PARA CAMBIAR ENTRE LISTA Y MAPA */}
           <TouchableOpacity
