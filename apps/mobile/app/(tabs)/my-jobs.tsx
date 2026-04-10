@@ -123,11 +123,6 @@ export default function MyJobsScreen() {
   };
 
   const submitReview = async () => {
-    if (!comment.trim()) {
-      Alert.alert("Atención", "Por favor deja un breve comentario.");
-      return;
-    }
-
     try {
       await api.post(`/api/reviews`, {
         jobId: selectedJob.id,

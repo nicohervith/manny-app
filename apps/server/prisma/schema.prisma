@@ -65,7 +65,7 @@ model Job {
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int // 1 a 5
-  comment   String   @db.Text
+  comment   String?   @db.Text
   createdAt DateTime @default(now())
 
   jobId Int @unique
