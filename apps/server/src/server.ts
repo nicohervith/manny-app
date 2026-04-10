@@ -4,7 +4,6 @@ import express from "express";
 import { createServer } from "http";
 import cron from "node-cron";
 import { Server } from "socket.io";
-import { notifyNearbyJobs } from "../src/services/notification.service.js";
 import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import bidRoutes from "./routes/bid.routes.js";
@@ -15,6 +14,7 @@ import paymentRoutes from "./routes/payment.routes.js";
 import reviewRoutes from "./routes/reviews.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import workerRoutes from "./routes/worker.routes.js";
+import { notifyNearbyJobs } from "./services/notification.service.js";
 
 dotenv.config();
 
