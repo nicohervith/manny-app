@@ -68,7 +68,7 @@ export const notifyNearbyJobs = async () => {
     const nearbyJobs: any[] = await prisma.$queryRaw`
       SELECT id, title, 
       (6371 * acos(cos(radians(${lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(latitude)))) AS distance 
-      FROM "Job" 
+      FROM \`Job\`
       WHERE status = 'PENDING' 
       HAVING distance < 10 
       ORDER BY distance ASC 
