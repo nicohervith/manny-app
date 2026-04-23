@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import { ImageLightbox } from "./ImageLightbox";
 
 interface JobCardProps {
@@ -17,34 +18,48 @@ interface JobCardProps {
 }
 
 export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
+  const { colors } = useTheme();
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const jobImages = item.images ? item.images.split(",") : [];
   const isLongDescription = item.description?.length > 120;
 
   return (
-    <View style={styles.jobCard}>
+    <View
+      style={[
+        styles.jobCard,
+        { borderColor: colors.border, backgroundColor: colors.surface },
+      ]}
+    >
       <View style={styles.jobHeader}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={[styles.jobTitle, { color: colors.text }]}>
+          {item.title}
+        </Text>
         {distance !== null && (
-          <View style={styles.distanceBadge}>
+          <View
+            style={[
+              styles.distanceBadge,
+              { backgroundColor: colors.commissionBg },
+            ]}
+          >
             <Ionicons name="location" size={12} color="#007AFF" />
-            <Text style={styles.distanceText}>{distance.toFixed(1)} km</Text>
+            <Text style={[styles.distanceText, { color: colors.text }]}>
+              {distance.toFixed(1)} km
+            </Text>
           </View>
         )}
       </View>
 
-      {/* CARRUSEL DE IMÁGENES CON TOUCHABLE */}
       {jobImages.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.imageScroll}
         >
-          {jobImages.map((imgUrl:any, index:any) => (
+          {jobImages.map((imgUrl: any, index: any) => (
             <TouchableOpacity
               key={index}
-              onPress={() => setSelectedImg(imgUrl)} // Seteamos la imagen para abrir el modal
+              onPress={() => setSelectedImg(imgUrl)}
               activeOpacity={0.8}
             >
               <Image
@@ -57,14 +72,17 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
         </ScrollView>
       )}
 
-      <Text style={styles.description} numberOfLines={expanded ? undefined : 3}>
+      <Text
+        style={[styles.description, { color: colors.text }]}
+        numberOfLines={expanded ? undefined : 3}
+      >
         {item.description}
       </Text>
 
       {isLongDescription && (
         <TouchableOpacity
           onPress={() => setExpanded(!expanded)}
-          style={styles.expandButton}
+          style={[styles.expandButton, { borderColor: colors.border }]}
         >
           <Text style={styles.expandText}>
             {expanded ? "Ver menos ▲" : "Ver más ▼"}
@@ -72,7 +90,7 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
         </TouchableOpacity>
       )}
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderColor: colors.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {/* FOTO DE PERFIL DEL CLIENTE */}
           {item.client?.avatar ? (
@@ -86,7 +104,9 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
 
           <View style={{ marginLeft: 8 }}>
             <Text style={styles.clientLabel}>Publicado por:</Text>
-            <Text style={styles.clientName}>{item.client?.name}</Text>
+            <Text style={[styles.clientName, { color: colors.text }]}>
+              {item.client?.name}
+            </Text>
           </View>
         </View>
         <TouchableOpacity
@@ -108,7 +128,7 @@ export const JobCard = ({ item, distance, onApply }: JobCardProps) => {
 
 const styles = StyleSheet.create({
   jobCard: {
-    backgroundColor: "#fff",
+    /*  backgroundColor: "#fff", */
     marginHorizontal: 15,
     marginTop: 15,
     borderRadius: 12,
@@ -124,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 8,
   },
-  jobTitle: { fontSize: 18, fontWeight: "bold", color: "#333", flex: 1 },
+  jobTitle: { fontSize: 18, fontWeight: "bold", flex: 1 },
   distanceBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -133,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   distanceText: {
-    color: "#007AFF",
+    /* color: "#007AFF", */
     fontWeight: "bold",
     fontSize: 12,
     marginLeft: 4,
@@ -155,7 +175,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#EEE",
+    /* borderTopColor: "#EEE", */
     paddingTop: 10,
   },
   clientLabel: { fontSize: 10, color: "#AAA", textTransform: "uppercase" },
