@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 interface Bids {
@@ -25,6 +26,7 @@ interface Bids {
 
 export default function MyBidsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const [myBids, setMyBids] = useState<Bids[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,15 +135,22 @@ export default function MyBidsScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View
+        style={[
+          { flex: 1, justifyContent: "center" },
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mis Postulaciones</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>
+        Mis Postulaciones
+      </Text>
       <FlatList
         data={myBids}
         keyExtractor={(item) => item.id.toString()}
@@ -149,7 +158,7 @@ export default function MyBidsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Aún no has realizado ninguna oferta.
           </Text>
         }
@@ -160,13 +169,25 @@ export default function MyBidsScreen() {
             item.job?.workerId === user?.id;
 
           return (
-            <View style={[styles.card, isAccepted && styles.acceptedCard]}>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                isAccepted && styles.acceptedCard,
+              ]}
+            >
               <View style={styles.row}>
-                <Text style={styles.jobTitle}>{item.job?.title}</Text>
-                <Text style={styles.price}>${item.price}</Text>
+                <Text style={[styles.jobTitle, { color: colors.text }]}>
+                  {item.job?.title}
+                </Text>
+                <Text style={[styles.price, { color: colors.success }]}>
+                  ${item.price}
+                </Text>
               </View>
 
-              <Text style={styles.clientName}>
+              <Text
+                style={[styles.clientName, { color: colors.textSecondary }]}
+              >
                 Cliente: {item.job?.client?.name || "Cargando..."}
               </Text>
 
@@ -176,7 +197,7 @@ export default function MyBidsScreen() {
                     <Ionicons
                       name="checkmark-circle"
                       size={16}
-                      color="#28A745"
+                      color={colors.success}
                     />
                     <Text style={styles.acceptedText}>¡Oferta Aceptada!</Text>
                   </View>
@@ -184,8 +205,11 @@ export default function MyBidsScreen() {
                   <Text
                     style={[
                       styles.pendingText,
+                      { color: colors.textSecondary },
                       item.job?.status === "COMPLETED" &&
-                        item.job?.workerId === user?.id && { color: "#FF9500" },
+                        item.job?.workerId === user?.id && {
+                          color: colors.warning,
+                        },
                     ]}
                   >
                     {getStatusText(item.job, user?.id!)}
@@ -195,18 +219,36 @@ export default function MyBidsScreen() {
 
               {/* INFO DE UBICACIÓN (Solo si fue aceptado) */}
               {isAccepted && item.job?.address && (
-                <View style={styles.locationCard}>
+                <View
+                  style={[
+                    styles.locationCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.locationHeader}>
-                    <Ionicons name="location" size={18} color="#FF3B30" />
-                    <Text style={styles.locationTitle}>
+                    <Ionicons name="location" size={18} color={colors.error} />
+                    <Text
+                      style={[
+                        styles.locationTitle,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
                       Dirección del servicio
                     </Text>
                   </View>
 
-                  <Text style={styles.addressText}>{item.job.address}</Text>
+                  <Text style={[styles.addressText, { color: colors.text }]}>
+                    {item.job.address}
+                  </Text>
 
                   <TouchableOpacity
-                    style={styles.mapButton}
+                    style={[
+                      styles.mapButton,
+                      { backgroundColor: colors.commissionBg },
+                    ]}
                     onPress={() => {
                       const query = encodeURIComponent(item.job.address);
                       const url = Platform.select({
@@ -217,15 +259,26 @@ export default function MyBidsScreen() {
                       WebBrowser.openBrowserAsync(url);
                     }}
                   >
-                    <Ionicons name="map-outline" size={16} color="#007AFF" />
-                    <Text style={styles.mapButtonText}>Abrir en GPS</Text>
+                    <Ionicons
+                      name="map-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text
+                      style={[styles.mapButtonText, { color: colors.primary }]}
+                    >
+                      Abrir en GPS
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               {isAccepted && (
                 <TouchableOpacity
-                  style={styles.chatButton}
+                  style={[
+                    styles.chatButton,
+                    { backgroundColor: colors.primary },
+                  ]}
                   onPress={() =>
                     router.push({
                       pathname: "/chat/[jobId]",
@@ -246,7 +299,7 @@ export default function MyBidsScreen() {
                   <TouchableOpacity
                     style={[
                       styles.chatButton,
-                      { backgroundColor: "#28A745", marginTop: 8 },
+                      { backgroundColor: colors.success, marginTop: 8 },
                     ]}
                     onPress={() => handleFinishJob(item.job.id)}
                   >
@@ -266,7 +319,7 @@ export default function MyBidsScreen() {
                   <TouchableOpacity
                     style={[
                       styles.chatButton,
-                      { backgroundColor: "#6C3483", marginTop: 8 },
+                      { backgroundColor: colors.info, marginTop: 8 },
                     ]}
                     onPress={() => handleCashPayment(item.job.id)}
                   >
@@ -280,23 +333,74 @@ export default function MyBidsScreen() {
               {item.job?.status === "PAID" &&
                 item.job?.workerId === user?.id &&
                 item.job?.paymentMethod !== "CASH" && (
-                  <View style={styles.earningsBox}>
-                    <Text style={styles.earningsTitle}>Resumen del pago</Text>
+                  <View
+                    style={[
+                      styles.earningsBox,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.earningsTitle, { color: colors.text }]}
+                    >
+                      Resumen del pago
+                    </Text>
                     <View style={styles.earningsRow}>
-                      <Text style={styles.earningsLabel}>Precio acordado</Text>
-                      <Text style={styles.earningsValue}>${item.price}</Text>
+                      <Text
+                        style={[
+                          styles.earningsLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Precio acordado
+                      </Text>
+                      <Text
+                        style={[styles.earningsValue, { color: colors.text }]}
+                      >
+                        ${item.price}
+                      </Text>
                     </View>
                     <View style={styles.earningsRow}>
-                      <Text style={styles.earningsLabel}>
+                      <Text
+                        style={[
+                          styles.earningsLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
                         Comisión Manny (10%)
                       </Text>
-                      <Text style={styles.earningsNegative}>
+                      <Text
+                        style={[
+                          styles.earningsNegative,
+                          { color: colors.error },
+                        ]}
+                      >
                         -${(item.price * 0.1).toFixed(0)}
                       </Text>
                     </View>
-                    <View style={[styles.earningsRow, styles.earningsTotalRow]}>
-                      <Text style={styles.earningsTotalLabel}>Recibís</Text>
-                      <Text style={styles.earningsTotalValue}>
+                    <View
+                      style={[
+                        styles.earningsRow,
+                        styles.earningsTotalRow,
+                        { borderTopColor: colors.border },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.earningsTotalLabel,
+                          { color: colors.text },
+                        ]}
+                      >
+                        Recibís
+                      </Text>
+                      <Text
+                        style={[
+                          styles.earningsTotalValue,
+                          { color: colors.success },
+                        ]}
+                      >
                         ${(item.price * 0.9).toFixed(0)}
                       </Text>
                     </View>
@@ -306,11 +410,26 @@ export default function MyBidsScreen() {
               {item.job?.status === "PAID" &&
                 item.job?.workerId === user?.id &&
                 item.job?.paymentMethod === "CASH" && (
-                  <View style={styles.earningsBox}>
-                    <Text style={styles.earningsTitle}>
+                  <View
+                    style={[
+                      styles.earningsBox,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.earningsTitle, { color: colors.text }]}
+                    >
                       Pago en efectivo confirmado ✅
                     </Text>
-                    <Text style={styles.earningsLabel}>
+                    <Text
+                      style={[
+                        styles.earningsLabel,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
                       Recibiste: ${item.price}
                     </Text>
                   </View>
@@ -326,43 +445,44 @@ export default function MyBidsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
     padding: 20,
     paddingTop: 20,
   },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: {
-    backgroundColor: "#fff",
-    padding: 15,
+    padding: 16,
     borderRadius: 12,
     marginBottom: 15,
-    elevation: 1,
+    elevation: 2,
+    borderWidth: 1.5,
   },
-  acceptedCard: { borderColor: "#28A745", borderWidth: 2 },
+  acceptedCard: { borderColor: "#28A745", borderWidth: 2.5 },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 5,
   },
   jobTitle: { fontSize: 16, fontWeight: "bold", flex: 1 },
-  price: { fontSize: 16, fontWeight: "bold", color: "#28A745" },
-  clientName: { color: "#666", fontSize: 14, marginBottom: 10 },
-  statusContainer: { marginTop: 5 },
+  price: { fontSize: 16, fontWeight: "bold" },
+  clientName: { fontSize: 14, marginBottom: 10 },
+  statusContainer: { marginTop: 8 },
   acceptedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E8F5E9",
-    padding: 5,
-    borderRadius: 5,
+    backgroundColor: "rgba(40, 167, 69, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "rgba(40, 167, 69, 0.3)",
   },
-  acceptedText: { color: "#28A745", fontWeight: "bold", marginLeft: 5 },
-  pendingText: { color: "#999", fontStyle: "italic" },
+  acceptedText: { color: "#28A745", fontWeight: "bold", marginLeft: 6 },
+  pendingText: { fontStyle: "italic" },
   chatButton: {
     flexDirection: "row",
-    backgroundColor: "#007AFF",
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     marginTop: 15,
     justifyContent: "center",
     alignItems: "center",
@@ -371,77 +491,66 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     marginTop: 50,
-    color: "#999",
     fontSize: 16,
   },
   earningsBox: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 10,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
     borderWidth: 1,
-    borderColor: "#E9ECEF",
   },
   earningsTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   earningsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
-  earningsLabel: { fontSize: 13, color: "#666" },
-  earningsValue: { fontSize: 13, color: "#333" },
-  earningsNegative: { fontSize: 13, color: "#DC3545" },
+  earningsLabel: { fontSize: 13 },
+  earningsValue: { fontSize: 13 },
+  earningsNegative: { fontSize: 13 },
   earningsTotalRow: {
     borderTopWidth: 1,
-    borderTopColor: "#DEE2E6",
-    marginTop: 4,
-    paddingTop: 8,
+    marginTop: 6,
+    paddingTop: 10,
   },
-  earningsTotalLabel: { fontSize: 14, fontWeight: "700", color: "#333" },
-  earningsTotalValue: { fontSize: 14, fontWeight: "700", color: "#28A745" },
+  earningsTotalLabel: { fontSize: 14, fontWeight: "700" },
+  earningsTotalValue: { fontSize: 14, fontWeight: "700" },
   locationCard: {
-    backgroundColor: "#F8F9FA",
     borderRadius: 12,
-    padding: 12,
-    marginVertical: 10,
+    padding: 14,
+    marginVertical: 12,
     borderWidth: 1,
-    borderColor: "#E9ECEF",
   },
   locationHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   locationTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#495057",
-    marginLeft: 5,
+    marginLeft: 6,
     textTransform: "uppercase",
   },
   addressText: {
     fontSize: 15,
-    color: "#212529",
-    marginBottom: 10,
-    lineHeight: 20,
+    marginBottom: 12,
+    lineHeight: 22,
   },
   mapButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E7F1FF",
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   mapButtonText: {
-    color: "#007AFF",
     fontSize: 14,
     fontWeight: "600",
-    marginLeft: 6,
+    marginLeft: 8,
   },
 });

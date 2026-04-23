@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
 interface ApplyBidModalProps {
   visible: boolean;
@@ -37,7 +38,7 @@ export default function ApplyBidModal({
     availableFrom: "",
     availableTo: "",
   });
-
+  const { colors } = useTheme();
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [fromTime, setFromTime] = useState(new Date());
@@ -58,49 +59,89 @@ export default function ApplyBidModal({
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Enviar Propuesta</Text>
-          <Text style={styles.modalSubtitle}>{jobTitle}</Text>
+        <View
+          style={[
+            styles.modalContent,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.modalTitle, { color: colors.text }]}>
+            Enviar Propuesta
+          </Text>
+          <Text style={[styles.modalSubtitle, { color: colors.text }]}>
+            {jobTitle}
+          </Text>
 
           {jobDescription && (
-            <View style={styles.descriptionBox}>
-              <Text style={styles.descriptionTitle}>
+            <View
+              style={[
+                styles.descriptionBox,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.descriptionTitle,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 Descripción del trabajo:
               </Text>
-              <Text style={styles.descriptionText}>{jobDescription}</Text>
+              <Text style={[styles.descriptionText, { color: colors.text }]}>
+                {jobDescription}
+              </Text>
             </View>
           )}
 
-          <Text style={styles.label}>Tu Precio ($)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Tu Precio ($)
+          </Text>
           <TextInput
-            style={styles.modalInput}
-            placeholderTextColor="#999"
+            style={[
+              styles.modalInput,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                color: colors.text,
+              },
+            ]}
+            placeholderTextColor={colors.textLight}
             placeholder="Ej: 5000"
             keyboardType="numeric"
             value={formData.price}
             onChangeText={(text) => setFormData({ ...formData, price: text })}
           />
 
-          <Text style={styles.label}>¿Cuándo podés asistir?</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            ¿Cuándo podés asistir?
+          </Text>
           <View style={styles.timeRow}>
             <TouchableOpacity
-              style={styles.timePicker}
+              style={[
+                styles.timePicker,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
               onPress={() => setShowFromPicker(true)}
             >
-              <Ionicons name="time-outline" size={16} color="#007AFF" />
-              <Text style={styles.timeText}>
+              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Text style={[styles.timeText, { color: colors.text }]}>
                 {formData.availableFrom || "Desde"}
               </Text>
             </TouchableOpacity>
 
-            <Text style={styles.timeSeparator}>→</Text>
+            <Text style={[styles.timeSeparator, { color: colors.textLight }]}>
+              →
+            </Text>
 
             <TouchableOpacity
-              style={styles.timePicker}
+              style={[
+                styles.timePicker,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
               onPress={() => setShowToPicker(true)}
             >
-              <Ionicons name="time-outline" size={16} color="#007AFF" />
-              <Text style={styles.timeText}>
+              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Text style={[styles.timeText, { color: colors.text }]}>
                 {formData.availableTo || "Hasta"}
               </Text>
             </TouchableOpacity>
@@ -136,10 +177,20 @@ export default function ApplyBidModal({
             />
           )}
 
-          <Text style={styles.label}>Mensaje al cliente</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Mensaje al cliente
+          </Text>
           <TextInput
-            style={[styles.modalInput, { height: 80 }]}
-            placeholderTextColor="#999"
+            style={[
+              styles.modalInput,
+              {
+                height: 80,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
+            placeholderTextColor={colors.textLight}
             placeholder="Cuéntale por qué eres el indicado..."
             multiline
             value={formData.message}
@@ -147,8 +198,16 @@ export default function ApplyBidModal({
           />
 
           <View style={styles.modalButtons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={{ color: "#666" }}>Cancelar</Text>
+            <TouchableOpacity
+              style={[
+                styles.cancelButton,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
+              onPress={onClose}
+            >
+              <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>
+                Cancelar
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.confirmButton} onPress={handleSend}>
               <Text style={{ color: "#fff", fontWeight: "bold" }}>
@@ -169,15 +228,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  modalContent: { backgroundColor: "#fff", borderRadius: 20, padding: 25 },
+  modalContent: {
+    borderRadius: 24,
+    padding: 25,
+    borderWidth: 1,
+  },
   modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
   descriptionBox: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 16,
-    borderLeftWidth: 3,
+    borderLeftWidth: 5,
     borderLeftColor: "#007AFF",
+    borderWidth: 1,
   },
   descriptionTitle: {
     fontSize: 12,
@@ -194,10 +257,10 @@ const styles = StyleSheet.create({
   },
   modalSubtitle: { color: "#007AFF", marginBottom: 20 },
   modalInput: {
-    backgroundColor: "#F0F2F5",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
   },
   modalButtons: {
     flexDirection: "row",
@@ -205,17 +268,25 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
   label: { fontSize: 14, fontWeight: "bold", marginTop: 10, marginBottom: 8 },
-  cancelButton: { padding: 15, marginRight: 10 },
-  confirmButton: { backgroundColor: "#007AFF", padding: 15, borderRadius: 10 },
+  cancelButton: {
+    padding: 15,
+    marginRight: 10,
+    borderRadius: 12,
+  },
+  confirmButton: {
+    backgroundColor: "#007AFF",
+    padding: 15,
+    borderRadius: 12,
+  },
   timeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   timePicker: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0F2F5",
-    borderRadius: 10,
-    padding: 12,
-    gap: 6,
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
   },
   timeText: { color: "#333", fontSize: 14 },
   timeSeparator: { color: "#999", fontSize: 18 },
