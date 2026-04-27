@@ -259,7 +259,9 @@ export default function WorkerFeedScreen() {
             );
           }}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No pending jobs in your area.</Text>
+            <Text style={styles.emptyText}>
+              No hay trabajos pendientes en tu área.
+            </Text>
           }
         />
       ) : (

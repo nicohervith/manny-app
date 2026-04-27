@@ -190,13 +190,14 @@ export const getWorkerVerificationStatus = async (req, res) => {
     res.json({ verification: profile?.verification || "NOT_STARTED" });
 };
 export const saveDraft = async (req, res) => {
-    const { userId, occupation, description, hourlyRate, latitude, longitude, province, city, tags, } = req.body;
+    const { userId, occupation, description, dni, hourlyRate, latitude, longitude, province, city, tags, } = req.body;
     try {
         const profile = await prisma.workerProfile.upsert({
             where: { userId: parseInt(userId) },
             update: {
                 occupation: occupation || undefined,
                 description: description || undefined,
+                dni: dni || undefined,
                 hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
                 latitude: latitude ? parseFloat(latitude) : undefined,
                 longitude: longitude ? parseFloat(longitude) : undefined,
@@ -217,7 +218,7 @@ export const saveDraft = async (req, res) => {
                 userId: parseInt(userId),
                 occupation: occupation || "",
                 description: description || "",
-                dni: "",
+                dni: dni || "",
                 province: province || "",
                 city: city || "",
                 verification: "DRAFT",

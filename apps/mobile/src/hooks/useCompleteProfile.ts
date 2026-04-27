@@ -95,6 +95,7 @@ export function useCompleteProfile() {
         userId: user.id,
         occupation: form.occupation,
         description: form.description,
+        dni: form.dni,
         hourlyRate: form.hourlyRate,
         latitude: form.latitude,
         longitude: form.longitude,
@@ -118,8 +119,18 @@ export function useCompleteProfile() {
     Alert.alert(
       "Progreso guardado",
       "Podés retomar el perfil cuando quieras. Recordá completarlo para empezar a recibir trabajo.",
+      [
+        {
+          text: "Ir al perfil",
+          onPress: () => router.push("/(tabs)/profile"),
+        },
+        {
+          text: "Seguir editando",
+          style: "cancel",
+        },
+      ],
     );
-  }, [saveDraft]);
+  }, [saveDraft, router]);
 
   const loadExistingProfile = async () => {
     try {
@@ -225,14 +236,48 @@ export function useCompleteProfile() {
     if (!manualAddress.trim()) return;
     setLoadingLocation(true);
     try {
-      const result = await Location.geocodeAsync(manualAddress);
-      if (result.length > 0) {
-        await updateLocationState(result[0].latitude, result[0].longitude);
+      // Mejorar búsqueda agregando contexto (ciudad y provincia)
+      let searchQuery = manualAddress;
+
+      // Si tiene provincia y ciudad, agregarlos a la búsqueda
+      if (form.city || form.province) {
+        searchQuery = `${manualAddress}, ${form.city || ""} ${form.province || ""}, Argentina`;
       } else {
-        Alert.alert("No encontrado", "No pudimos hallar esa dirección.");
+        // Por defecto agregar Argentina para mejorar búsqueda
+        searchQuery = `${manualAddress}, Argentina`;
       }
-    } catch {
-      Alert.alert("Error", "Ocurrió un error al buscar la dirección.");
+
+      const result = await Location.geocodeAsync(searchQuery.trim());
+
+      if (result.length > 0) {
+        // Usar el resultado más preciso
+        await updateLocationState(result[0].latitude, result[0].longitude);
+        Alert.alert("Dirección encontrada", `Se estableció: ${manualAddress}`);
+      } else {
+        // Intentar búsqueda sin Argentina
+        const retryResult = await Location.geocodeAsync(manualAddress);
+        if (retryResult.length > 0) {
+          await updateLocationState(
+            retryResult[0].latitude,
+            retryResult[0].longitude,
+          );
+          Alert.alert(
+            "Dirección encontrada",
+            `Se estableció: ${manualAddress}`,
+          );
+        } else {
+          Alert.alert(
+            "No encontrado",
+            `No pudimos hallar "${manualAddress}". Intenta con:\n- Calle y número\n- O usa la ubicación GPS`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error buscando dirección:", error);
+      Alert.alert(
+        "Error",
+        "Ocurrió un error al buscar la dirección. Intenta nuevamente.",
+      );
     } finally {
       setLoadingLocation(false);
     }

@@ -42,9 +42,7 @@ export default function LoginScreen() {
       await setToken(token, user);
 
       console.log("Login exitoso");
-      if (user.role === "ADMIN") {
-        router.replace("/(tabs)/verify-workers");
-      } else if (user.role === "WORKER" && !user.profile) {
+      if (user.role === "WORKER" && !user.profile) {
         router.replace("/worker/complete-profile");
       } else {
         router.replace("/(tabs)");
@@ -62,10 +60,21 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Manny Oficios Cerca</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Inicia sesión para continuar</Text>
+      <Text style={[styles.title, { color: colors.text }]}>
+        Manny Oficios Cerca
+      </Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        Inicia sesión para continuar
+      </Text>
       <TextInput
-        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+        style={[
+          styles.input,
+          {
+            backgroundColor: colors.surface,
+            color: colors.text,
+            borderColor: colors.border,
+          },
+        ]}
         placeholder="Email"
         placeholderTextColor={colors.textLight}
         value={email}
@@ -73,7 +82,12 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
       />
-      <View style={[styles.passwordContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.passwordContainer,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <TextInput
           style={[styles.passwordInput, { color: colors.text }]}
           placeholder="Contraseña"
@@ -106,7 +120,12 @@ export default function LoginScreen() {
         onPress={() => router.push("/(auth)/forgot-password")}
         style={{ marginTop: 15 }}
       >
-        <Text style={[styles.linkText, { color: colors.textSecondary, fontSize: 14 }]}>
+        <Text
+          style={[
+            styles.linkText,
+            { color: colors.textSecondary, fontSize: 14 },
+          ]}
+        >
           ¿Olvidaste tu contraseña?
         </Text>
       </TouchableOpacity>

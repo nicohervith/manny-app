@@ -39,6 +39,9 @@ export default function ProfileScreen() {
           !!p.occupation,
           !!p.dni,
           !!p.description,
+          !!p.city,
+          !!p.province,
+          
           !!p.hourlyRate,
           !!p.latitude,
           p.tags?.length > 0,
