@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 export default function ForgotPasswordScreen() {
@@ -18,6 +19,7 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handleSendCode = async () => {
     if (!email) return Alert.alert("Error", "Ingresa tu email");
@@ -55,17 +57,17 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recuperar Cuenta</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Recuperar Cuenta</Text>
 
       {step === 1 ? (
         <>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Ingresa tu email para recibir un código
           </Text>
           <TextInput
-            style={styles.input}
-            placeholderTextColor="#999"
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+            placeholderTextColor={colors.textLight}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
@@ -85,12 +87,12 @@ export default function ForgotPasswordScreen() {
         </>
       ) : (
         <>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Ingresa el código enviado a {email}
           </Text>
           <TextInput
-            style={styles.input}
-            placeholderTextColor="#999"
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+            placeholderTextColor={colors.textLight}
             placeholder="Código de 6 dígitos"
             value={code}
             onChangeText={setCode}
@@ -98,8 +100,8 @@ export default function ForgotPasswordScreen() {
             maxLength={6}
           />
           <TextInput
-            style={styles.input}
-            placeholderTextColor="#999"
+            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+            placeholderTextColor={colors.textLight}
             placeholder="Nueva Contraseña"
             value={newPassword}
             onChangeText={setNewPassword}
@@ -127,7 +129,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: "center",
-    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
@@ -137,18 +138,14 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 20,
     textAlign: "center",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
-    color: "#000",
-    backgroundColor: "#f5f5f5",
   },
   button: {
     backgroundColor: "#007AFF",

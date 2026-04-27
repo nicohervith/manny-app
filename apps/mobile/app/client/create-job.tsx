@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 export default function CreateJobScreen() {
@@ -32,6 +33,7 @@ export default function CreateJobScreen() {
   const [gettingLocation, setGettingLocation] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { colors } = useTheme();
 
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -45,13 +47,12 @@ export default function CreateJobScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true, // Permitir varias
-      selectionLimit: 5, // Límite de 5 fotos
-      quality: 0.6, // Comprimir un poco para subir más rápido
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+      quality: 0.6,
     });
 
     if (!result.canceled) {
-      // Agregamos las nuevas imágenes al array existente
       const selectedUris = result.assets.map((asset) => asset.uri);
       setImages([...images, ...selectedUris].slice(0, 5));
     }
@@ -61,7 +62,6 @@ export default function CreateJobScreen() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // Obtener ubicación al montar el componente
   useEffect(() => {
     (async () => {
       try {
@@ -113,16 +113,14 @@ export default function CreateJobScreen() {
       const userData = await SecureStore.getItemAsync("userData");
       const user = JSON.parse(userData || "{}");
 
-      // IMPORTANTE: Usamos FormData para enviar archivos
       const formData = new FormData();
-      formData.append("title", form.title); // Asegúrate que coincida con lo que el backend espera
+      formData.append("title", form.title);
       formData.append("description", form.description);
       formData.append("clientId", user.id.toString());
       formData.append("budget", form.budget || "0");
       formData.append("latitude", location.latitude.toString());
       formData.append("longitude", location.longitude.toString());
 
-      // Adjuntamos las imágenes
       images.forEach((uri, index) => {
         const fileName = uri.split("/").pop();
         const fileType = fileName?.split(".").pop();
@@ -154,13 +152,12 @@ export default function CreateJobScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Nuevo Trabajo</Text>
-        <Text style={styles.subtitle}>
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Nuevo Trabajo</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Describe el inconveniente para recibir presupuestos.
         </Text>
 
-        {/* Estado de Ubicación */}
         <View
           style={[
             styles.locationCard,
@@ -168,7 +165,7 @@ export default function CreateJobScreen() {
           ]}
         >
           {gettingLocation ? (
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : (
             <Ionicons
               name={location ? "location" : "location-outline"}
@@ -176,7 +173,7 @@ export default function CreateJobScreen() {
               color={location ? "#2ecc71" : "#e67e22"}
             />
           )}
-          <Text style={styles.locationText}>
+          <Text style={[styles.locationText]}>
             {gettingLocation
               ? "Obteniendo ubicación precisa..."
               : location
@@ -185,24 +182,23 @@ export default function CreateJobScreen() {
           </Text>
         </View>
 
-        {/* SECCIÓN DE IMÁGENES */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Fotos del problema (Máx. 5)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Fotos del problema (Máx. 5)</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.imageScroll}
           >
             <TouchableOpacity style={styles.pickImageBtn} onPress={pickImages}>
-              <Ionicons name="camera" size={30} color="#007AFF" />
-              <Text style={styles.pickImageText}>Añadir</Text>
+              <Ionicons name="camera" size={30} color={colors.primary} />
+              <Text style={[styles.pickImageText, { color: colors.primary }]}>Añadir</Text>
             </TouchableOpacity>
 
             {images.map((uri, index) => (
               <View key={index} style={styles.imageWrapper}>
                 <Image source={{ uri }} style={styles.thumbnail} />
                 <TouchableOpacity
-                  style={styles.removeBtn}
+                  style={[styles.removeBtn, { backgroundColor: colors.background }]}
                   onPress={() => removeImage(index)}
                 >
                   <Ionicons name="close-circle" size={24} color="#FF3B30" />
@@ -213,38 +209,38 @@ export default function CreateJobScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>
+          <Text style={[styles.label, { color: colors.text }]}>
             ¿Qué necesitas? (Ej: Plomero urgente)
           </Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
             placeholder="Título breve del problema"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textLight}
             onChangeText={(text) => setForm({ ...form, title: text })}
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Descripción detallada</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Descripción detallada</Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
             placeholder="Ej: El grifo de la cocina pierde agua por la base y necesito cambiar el cuerito..."
             multiline
             numberOfLines={5}
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textLight}
             onChangeText={(text) => setForm({ ...form, description: text })}
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Presupuesto sugerido (Opcional)</Text>
-          <View style={styles.priceInputWrapper}>
-            <Text style={styles.currency}>$</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Presupuesto sugerido (Opcional)</Text>
+          <View style={[styles.priceInputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.currency, { color: colors.text }]}>$</Text>
             <TextInput
-              style={styles.priceInput}
+              style={[styles.priceInput, { color: colors.text }]}
               placeholder="0.00"
               keyboardType="numeric"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.textLight}
               onChangeText={(text) => setForm({ ...form, budget: text })}
             />
           </View>
@@ -280,18 +276,15 @@ export default function CreateJobScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: "#fff",
     flexGrow: 1,
     paddingTop: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1a1a1a",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 24,
     marginTop: 4,
   },
@@ -314,7 +307,6 @@ const styles = StyleSheet.create({
   locationText: {
     marginLeft: 8,
     fontSize: 14,
-    color: "#444",
     fontWeight: "500",
   },
   inputGroup: {
@@ -323,17 +315,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#f8f9fa",
     borderWidth: 1,
-    borderColor: "#e9ecef",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: "#333",
   },
   textArea: {
     height: 120,
@@ -342,15 +330,12 @@ const styles = StyleSheet.create({
   priceInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
     borderWidth: 1,
-    borderColor: "#e9ecef",
     borderRadius: 12,
     paddingHorizontal: 16,
   },
   currency: {
     fontSize: 18,
-    color: "#333",
     fontWeight: "bold",
     marginRight: 8,
   },
@@ -358,7 +343,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 55,
     fontSize: 18,
-    color: "#333",
   },
   button: {
     backgroundColor: "#007AFF",
@@ -400,7 +384,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   pickImageText: {
-    color: "#007AFF",
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4,
@@ -418,7 +401,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -10,
     right: -10,
-    backgroundColor: "#fff",
     borderRadius: 12,
   },
   trustBanner: {

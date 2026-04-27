@@ -4,6 +4,7 @@ import DisputeModal from "../../src/components/DisputeModal";
 import MyJobCard from "../../src/components/MyJobCard";
 import RatingModal from "../../src/components/RatingModal";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 import { DisputeModalState, Job, RatingModalState } from "../../src/types/job";
 
@@ -13,6 +14,7 @@ export default function MyJobsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { user } = useAuth();
+  const { colors } = useTheme();
 
   // Rating Modal state
   const [ratingModal, setRatingModal] = useState<RatingModalState>({
@@ -86,8 +88,8 @@ export default function MyJobsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mis Pedidos</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>Mis Pedidos</Text>
 
       <FlatList
         data={myJobs}
@@ -133,7 +135,7 @@ export default function MyJobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA", padding: 15 },
+  container: { flex: 1, padding: 15 },
   header: {
     fontSize: 24,
     fontWeight: "bold",

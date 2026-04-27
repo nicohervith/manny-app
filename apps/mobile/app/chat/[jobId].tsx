@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { io } from "socket.io-client";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 const socket = io(API_URL.replace("/api", ""), {
@@ -29,6 +30,7 @@ export default function ChatScreen() {
   const router = useRouter();
   const [otherPartyName, setOtherPartyName] = useState("");
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
@@ -163,21 +165,30 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       {/* Header Personalizado (Opcional si usas Stack) */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{otherPartyName || "Chat"}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          {otherPartyName || "Chat"}
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 
       {job?.status === "COMPLETED" && (
-        <View style={styles.completedBanner}>
+        <View
+          style={[styles.completedBanner, { backgroundColor: colors.warning }]}
+        >
           <Ionicons
             name="information-circle"
             size={16}
@@ -211,19 +222,21 @@ export default function ChatScreen() {
               <View
                 style={[
                   styles.bubble,
-                  isMine ? styles.myBubble : styles.otherBubble,
+                  isMine
+                    ? [styles.myBubble, { backgroundColor: colors.primary }]
+                    : [styles.otherBubble, { backgroundColor: colors.card }],
                 ]}
               >
                 <Text
                   style={[
                     styles.messageText,
-                    isMine ? styles.myText : styles.otherText,
+                    isMine ? styles.myText : { color: colors.text },
                   ]}
                 >
                   {item.content}
                 </Text>
               </View>
-              <Text style={styles.timeText}>
+              <Text style={[styles.timeText, { color: colors.textLight }]}>
                 {new Date(item.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -237,7 +250,7 @@ export default function ChatScreen() {
       {/* Indicador de escritura */}
       <View style={styles.typingArea}>
         {isOtherTyping && (
-          <Text style={styles.typingText}>
+          <Text style={[styles.typingText, { color: colors.textLight }]}>
             {typingUser} está escribiendo...
           </Text>
         )}
@@ -246,13 +259,23 @@ export default function ChatScreen() {
       <View
         style={[
           styles.inputArea,
-          { paddingBottom: Math.max(insets.bottom, 15) }, // 4. Aplica el margen dinámico
+          {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            paddingBottom: Math.max(insets.bottom, 15),
+          },
         ]}
       >
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.background,
+              color: colors.text,
+            },
+          ]}
           placeholder="Escribe un mensaje..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textLight}
           value={newMessage}
           onChangeText={handleInputChange}
           multiline
@@ -260,6 +283,7 @@ export default function ChatScreen() {
         <TouchableOpacity
           style={[
             styles.sendButton,
+            { backgroundColor: colors.primary },
             !newMessage.trim() && styles.sendButtonDisabled,
           ]}
           onPress={sendMessage}
@@ -273,7 +297,7 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2F2F7" },
+  container: { flex: 1, backgroundColor: "#F2F2F7" }, // será sobrescrito por el theme
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
@@ -282,11 +306,11 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 15,
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // será sobrescrito por el theme
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    borderBottomColor: "#E5E5EA", // será sobrescrito por el theme
   },
-  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#333" }, // será sobrescrito por el theme
   messageWrapper: { marginBottom: 10, marginHorizontal: 15 },
   myWrapper: { alignItems: "flex-end" },
   otherWrapper: { alignItems: "flex-start" },
@@ -296,32 +320,32 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     maxWidth: "80%",
   },
-  myBubble: { backgroundColor: "#007AFF", borderBottomRightRadius: 2 },
-  otherBubble: { backgroundColor: "#fff", borderBottomLeftRadius: 2 },
+  myBubble: { backgroundColor: "#007AFF", borderBottomRightRadius: 2 }, // será sobrescrito por el theme
+  otherBubble: { backgroundColor: "#fff", borderBottomLeftRadius: 2 }, // será sobrescrito por el theme
   messageText: { fontSize: 16 },
   myText: { color: "#fff" },
-  otherText: { color: "#333" },
+  otherText: { color: "#333" }, // será sobrescrito por el theme
   timeText: {
     fontSize: 10,
-    color: "#8E8E93",
+    color: "#8E8E93", // será sobrescrito por el theme
     marginTop: 4,
     marginHorizontal: 5,
   },
   typingArea: { height: 20, marginHorizontal: 20, marginBottom: 5 },
-  typingText: { fontSize: 12, color: "#8E8E93", fontStyle: "italic" },
+  typingText: { fontSize: 12, color: "#8E8E93", fontStyle: "italic" }, // será sobrescrito por el theme
   inputArea: {
     flexDirection: "row",
     alignItems: "flex-end",
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // será sobrescrito por el theme
     borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
+    borderTopColor: "#E5E5EA", // será sobrescrito por el theme
     paddingBottom: Platform.OS === "ios" ? 20 : 10,
   },
   input: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
-    color: "#000000",
+    backgroundColor: "#F2F2F7", // será sobrescrito por el theme
+    color: "#000000", // será sobrescrito por el theme
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingTop: 10,
@@ -330,7 +354,7 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#007AFF", // será sobrescrito por el theme
     width: 40,
     height: 40,
     borderRadius: 20,

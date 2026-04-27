@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import api from "../services/api";
 import { Job } from "../types/job";
 
@@ -27,6 +28,7 @@ export default function MyJobCard({
   onRefresh,
 }: MyJobCardProps) {
   const router = useRouter();
+  const { colors } = useTheme();
   const [payingId, setPayingId] = React.useState<number | null>(null);
 
   const isPending = item.status === "PENDING";
@@ -88,15 +90,24 @@ export default function MyJobCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
       <View style={styles.cardHeader}>
-        <Text style={styles.jobTitle}>{item.title}</Text>
-        <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-          <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+        <Text style={[styles.jobTitle, { color: colors.text }]}>
+          {item.title}
+        </Text>
+        <View style={[styles.statusBadge, getStatusStyle(item.status, colors)]}>
+          <Text
+            style={[
+              styles.statusText,
+              { color: getStatusTextColor(item.status) },
+            ]}
+          >
+            {getStatusLabel(item.status)}
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.jobDate}>
+      <Text style={[styles.jobDate, { color: colors.textLight }]}>
         Publicado el: {new Date(item.createdAt).toLocaleDateString()}
       </Text>
 
@@ -130,9 +141,11 @@ export default function MyJobCard({
 
         {/* COMPLETED INFO BANNER */}
         {isCompleted && (
-          <View style={styles.completedInfoBanner}>
+          <View
+            style={[styles.completedInfoBanner, { borderColor: colors.border }]}
+          >
             <Ionicons name="checkmark-circle" size={16} color="#856404" />
-            <Text style={styles.completedInfoText}>
+            <Text style={[styles.completedInfoText]}>
               El profesional marcó este trabajo como terminado. Revisá el
               trabajo y procedé al pago.
             </Text>
@@ -162,16 +175,31 @@ export default function MyJobCard({
             </TouchableOpacity>
 
             <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>o</Text>
-              <View style={styles.dividerLine} />
+              <View
+                style={[styles.dividerLine, { backgroundColor: colors.border }]}
+              />
+              <Text style={[styles.dividerText, { color: colors.textLight }]}>
+                o
+              </Text>
+              <View
+                style={[styles.dividerLine, { backgroundColor: colors.border }]}
+              />
             </View>
 
-            <View style={styles.cashBox}>
+            <View
+              style={[
+                styles.cashBox,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
               <Ionicons name="cash-outline" size={22} color="#28A745" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.cashBoxTitle}>Pago en efectivo</Text>
-                <Text style={styles.cashBoxText}>
+                <Text style={[styles.cashBoxTitle, { color: colors.text }]}>
+                  Pago en efectivo
+                </Text>
+                <Text
+                  style={[styles.cashBoxText, { color: colors.textSecondary }]}
+                >
                   Pagale directamente al profesional. Una vez que reciba el
                   dinero, él confirmará el pago desde su app y el trabajo
                   quedará finalizado.
@@ -263,7 +291,24 @@ const getStatusLabel = (status: string) => {
   }
 };
 
-const getStatusStyle = (status: string) => {
+const getStatusTextColor = (status: string) => {
+  switch (status) {
+    case "PENDING":
+      return "#B8860B";
+    case "IN_PROGRESS":
+      return "#0051D5";
+    case "COMPLETED":
+      return "#FFC107";
+    case "PAID":
+      return "#2E7D32";
+    case "DISPUTED":
+      return "#C62828";
+    default:
+      return "#666";
+  }
+};
+
+const getStatusStyle = (status: string, colors?: any) => {
   switch (status) {
     case "PENDING":
       return { backgroundColor: "#FFF3E0" };
@@ -282,7 +327,7 @@ const getStatusStyle = (status: string) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // será sobrescrito por el theme
     borderRadius: 12,
     padding: 15,
     marginBottom: 15,
@@ -293,8 +338,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  jobTitle: { fontSize: 18, fontWeight: "bold", flex: 1 },
-  jobDate: { fontSize: 12, color: "#6c757d", marginVertical: 8 },
+  jobTitle: { fontSize: 18, fontWeight: "bold", flex: 1, color: "#333" }, // será sobrescrito por el theme
+  jobDate: { fontSize: 12, color: "#6c757d", marginVertical: 8 }, // será sobrescrito por el theme
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusText: { fontSize: 10, fontWeight: "bold" },
   buttonContainer: { flexDirection: "column", gap: 12, marginTop: 10 },

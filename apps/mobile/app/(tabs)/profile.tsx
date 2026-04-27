@@ -333,6 +333,28 @@ export default function ProfileScreen() {
         </>
       )}
 
+      {role === "CLIENT" && (
+        <>
+          <TouchableOpacity
+            style={[
+              styles.menuButton,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
+            onPress={() => router.push("/settings" as any)}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>
+              Ajustes
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textLight}
+            />
+          </TouchableOpacity>
+        </>
+      )}
+
       <TouchableOpacity
         style={[styles.logoutButton, { backgroundColor: colors.error }]}
         onPress={handleLogout}

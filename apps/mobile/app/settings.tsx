@@ -2,9 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Linking,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* Sección de Preferencias */}
-      <View
+      {/*  <View
         style={[
           styles.section,
           { backgroundColor: colors.surface, borderColor: colors.border },
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
             trackColor={{ false: "#767577", true: colors.primary }}
           />
         </View>
-      </View>
+      </View> */}
 
       {/* Sección de Privacidad */}
       <View
@@ -166,7 +166,7 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.menuItem}>
+        {/* <TouchableOpacity style={styles.menuItem}>
           <View style={styles.settingInfo}>
             <Ionicons
               name="shield-checkmark-outline"
@@ -178,9 +178,14 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() =>
+            Linking.openURL("https://mannyoficioscerca.com.ar/eliminar-cuenta")
+          }
+        >
           <View style={styles.settingInfo}>
             <Ionicons name="trash-outline" size={22} color={colors.error} />
             <Text style={[styles.settingLabel, { color: colors.error }]}>
@@ -209,7 +214,10 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => Linking.openURL("https://mannyoficioscerca.com.ar")}
+        >
           <View style={styles.settingInfo}>
             <Ionicons
               name="document-text-outline"
@@ -223,7 +231,10 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => Linking.openURL("https://mannyoficioscerca.com.ar")}
+        >
           <View style={styles.settingInfo}>
             <Ionicons
               name="shield-outline"
