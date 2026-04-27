@@ -21,6 +21,8 @@ export type ProfileForm = {
   latitude: number | null;
   longitude: number | null;
   tags: string[];
+  province: string;
+  city: string;
 };
 
 export type MapRegion = {
@@ -57,6 +59,8 @@ export function useCompleteProfile() {
     latitude: null,
     longitude: null,
     tags: [],
+    province: "",
+    city: "",
   });
 
   const [images, setImages] = useState<ProfileImages>({
@@ -76,6 +80,8 @@ export function useCompleteProfile() {
       !!images.dniFront,
       !!images.dniBack,
       !!images.selfie,
+      !!form.province,
+      !!form.city,
     ];
     const completed = checks.filter(Boolean).length;
     return Math.round((completed / checks.length) * 100);
@@ -91,6 +97,8 @@ export function useCompleteProfile() {
         hourlyRate: form.hourlyRate,
         latitude: form.latitude,
         longitude: form.longitude,
+        province: form.province,
+        city: form.city,
         tags: JSON.stringify(form.tags),
       });
     } catch (e) {
@@ -125,6 +133,8 @@ export function useCompleteProfile() {
         latitude: p.latitude,
         longitude: p.longitude,
         tags: p.tags ? p.tags.map((t: any) => t.name) : [],
+        province: p.province || "",
+        city: p.city || "",
       });
       setImages({
         dniFront: p.dniFront || null,
@@ -277,14 +287,27 @@ export function useCompleteProfile() {
   };
 
   const saveProfile = async () => {
-    const hasImages = images.dniFront && images.dniBack && images.selfie;
+    const hasBasicInfo =
+      form.occupation &&
+      form.dni &&
+      form.hourlyRate &&
+      form.province &&
+      form.city;
     const hasLocation = form.latitude && form.longitude;
-    const hasBasicInfo = form.occupation && form.dni && form.hourlyRate;
+    const hasImages = images.dniFront && images.dniBack && images.selfie;
 
-    if (!hasBasicInfo || !hasLocation || !hasImages) {
+    if (!hasBasicInfo || !hasLocation) {
       Alert.alert(
-        "Perfil incompleto",
-        "Para enviar a revisión debes completar la info básica, tu ubicación y las 3 fotos del DNI.",
+        "Información incompleta",
+        "Por favor completa la ocupación, DNI, provincia, ciudad, ubicación y tarifa horaria.",
+      );
+      return;
+    }
+
+    if (!hasImages) {
+      Alert.alert(
+        "Fotos pendientes",
+        "Para enviar a revisión debes subir las 3 fotos de identidad (frente, dorso y selfie).",
       );
       return;
     }
@@ -294,6 +317,12 @@ export function useCompleteProfile() {
       const userDataRaw = await SecureStore.getItemAsync("userData");
       const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
 
+      if (!userData?.id) {
+        Alert.alert("Error", "No se encontró el usuario.");
+        setLoading(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("userId", userData.id.toString());
       formData.append("occupation", form.occupation);
@@ -302,6 +331,8 @@ export function useCompleteProfile() {
       formData.append("hourlyRate", form.hourlyRate);
       formData.append("latitude", form.latitude!.toString());
       formData.append("longitude", form.longitude!.toString());
+      formData.append("province", form.province);
+      formData.append("city", form.city);
       formData.append("tags", JSON.stringify(form.tags));
 
       const appendIfLocal = (uri: string | null, fieldName: string) => {
@@ -319,14 +350,35 @@ export function useCompleteProfile() {
       appendIfLocal(images.dniBack, "dniBack");
       appendIfLocal(images.selfie, "selfie");
 
-      await api.post(`/api/worker/complete-profile`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      Alert.alert("Éxito", "Tu perfil ha sido enviado y será revisado pronto.");
+      const response = await api.post(
+        `/api/worker/complete-profile`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      Alert.alert(
+        "Éxito",
+        isEditing
+          ? "Tu perfil ha sido actualizado."
+          : "Tu perfil ha sido enviado y será revisado pronto.",
+      );
       router.replace("/(tabs)/worker-feed");
     } catch (error: any) {
-      console.error(error.response?.data || error.message);
-      Alert.alert("Error", "Error de red o servidor no alcanzado.");
+      console.error("Error al guardar perfil:", error);
+
+      let errorMessage = "Error de red o servidor no alcanzado.";
+
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.details) {
+        errorMessage = error.response.data.details;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }

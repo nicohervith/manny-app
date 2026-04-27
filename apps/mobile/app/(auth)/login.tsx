@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -20,8 +21,8 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
-
   const { setToken } = useAuth();
+  const { colors } = useTheme();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -60,23 +61,23 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Manny Oficios Cerca</Text>
-      <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Manny Oficios Cerca</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Inicia sesión para continuar</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         placeholder="Email"
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textLight}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
       />
-      <View style={styles.passwordContainer}>
+      <View style={[styles.passwordContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TextInput
-          style={styles.passwordInput}
+          style={[styles.passwordInput, { color: colors.text }]}
           placeholder="Contraseña"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textLight}
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -88,7 +89,7 @@ export default function LoginScreen() {
           <Ionicons
             name={showPassword ? "eye-off" : "eye"}
             size={24}
-            color="#666"
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -105,7 +106,7 @@ export default function LoginScreen() {
         onPress={() => router.push("/(auth)/forgot-password")}
         style={{ marginTop: 15 }}
       >
-        <Text style={[styles.linkText, { color: "#666", fontSize: 14 }]}>
+        <Text style={[styles.linkText, { color: colors.textSecondary, fontSize: 14 }]}>
           ¿Olvidaste tu contraseña?
         </Text>
       </TouchableOpacity>
@@ -121,45 +122,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "#fff",
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1a1a1a",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
     textAlign: "center",
     marginBottom: 40,
   },
   input: {
-    backgroundColor: "#f5f5f5",
-    color: "#000",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
   },
   passwordInput: {
     flex: 1,
     padding: 12,
     paddingRight: 50,
     fontSize: 16,
-    color: "#000",
-    borderColor: "#e0e0e0",
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
     borderRadius: 10,
     marginBottom: 15,
     position: "relative",
-    borderColor: "#e0e0e0",
     borderWidth: 1,
   },
   button: {

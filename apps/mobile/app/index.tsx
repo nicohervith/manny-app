@@ -1,14 +1,16 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTheme } from "../src/context/ThemeContext";
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Manny Oficios Cerca</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.primary }]}>Manny Oficios Cerca</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Tu próximo trabajo (o trabajador) está a un click.
         </Text>
       </View>
@@ -22,7 +24,7 @@ export default function LandingScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.registerButton}
+          style={[styles.registerButton, { backgroundColor: colors.background }]}
           onPress={() => router.push("/(auth)/register")}
         >
           <Text style={styles.registerText}>Crear cuenta nueva</Text>
@@ -35,15 +37,13 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     padding: 20,
     justifyContent: "space-around",
   },
   header: { alignItems: "center", marginTop: 50 },
-  title: { fontSize: 42, fontWeight: "bold", color: "#007AFF" },
+  title: { fontSize: 42, fontWeight: "bold" },
   subtitle: {
     fontSize: 18,
-    color: "#666",
     textAlign: "center",
     marginTop: 10,
     paddingHorizontal: 20,
@@ -62,7 +62,6 @@ const styles = StyleSheet.create({
   },
   loginText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   registerButton: {
-    backgroundColor: "#fff",
     padding: 18,
     borderRadius: 12,
     alignItems: "center",

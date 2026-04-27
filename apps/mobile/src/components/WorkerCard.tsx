@@ -1,15 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
 export const WorkerCard = ({ item }: { item: any }) => {
+  const { colors } = useTheme();
   const isOnline =
     item.user.lastSeen &&
     new Date().getTime() - new Date(item.user.lastSeen).getTime() <
       5 * 60 * 1000;
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.card }]}
       activeOpacity={0.8}
       onPress={() =>
         router.push({
@@ -26,25 +28,32 @@ export const WorkerCard = ({ item }: { item: any }) => {
       </View>
       {/* Centro: Info Principal */}
       <View style={styles.infoContainer}>
-        <Text style={styles.name}>{item.user.name}</Text>
+        <Text style={[styles.name, { color: colors.text }]}>
+          {item.user.name}
+        </Text>
         {/* LISTADO DE TAGS */}
         <View style={styles.tagsContainer}>
           {item.tags?.map((tag: any) => (
-            <View key={tag.id} style={styles.tagBadge}>
-              <Text style={styles.tagText}>{tag.name}</Text>
+            <View
+              key={tag.id}
+              style={[styles.tagBadge, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.tagText, { color: colors.background }]}>
+                {tag.name}
+              </Text>
             </View>
           ))}
         </View>
-        <Text style={styles.occupation}>
+        <Text style={[styles.occupation, { color: colors.primary }]}>
           {item.occupation || "Servicios Generales"}
         </Text>
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={14} color="#FFD700" />
-          <Text style={styles.ratingText}>
+          <Text style={[styles.ratingText, { color: colors.text }]}>
             {item.averageRating > 0
               ? Number(item.averageRating).toFixed(1)
               : "Nuevo"}{" "}
-            <Text style={styles.reviewsText}>
+            <Text style={[styles.reviewsText, { color: colors.textLight }]}>
               ({item.totalReviews || 0} reseñas)
             </Text>
           </Text>
@@ -53,15 +62,17 @@ export const WorkerCard = ({ item }: { item: any }) => {
 
       {/* Lado Derecho: Precio y Acción */}
       <View style={styles.priceContainer}>
-        <Text style={styles.price}>${item.hourlyRate || "---"}</Text>
-        <Text style={styles.perHour}>/hr</Text>
+        <Text style={[styles.price, { color: colors.text }]}>
+          ${item.hourlyRate || "---"}
+        </Text>
+        <Text style={[styles.perHour, { color: colors.textLight }]}>/hr</Text>
       </View>
     </TouchableOpacity>
   );
 };
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#FFF", // será sobrescrito por el theme
     borderRadius: 16,
     padding: 15,
     marginBottom: 12,
@@ -106,11 +117,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1A1A1A",
+    color: "#1A1A1A", // será sobrescrito por el theme
   },
   occupation: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#007AFF", // será sobrescrito por el theme
     fontWeight: "500",
     marginBottom: 4,
   },
@@ -123,9 +134,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     marginLeft: 4,
+    color: "#333", // será sobrescrito por el theme
   },
   reviewsText: {
-    color: "#999",
+    color: "#999", // será sobrescrito por el theme
     fontWeight: "400",
   },
   locationRow: {
@@ -143,11 +155,11 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1A1A1A",
+    color: "#1A1A1A", // será sobrescrito por el theme
   },
   perHour: {
     fontSize: 12,
-    color: "#999",
+    color: "#999", // será sobrescrito por el theme
     marginTop: -4,
   },
   viewButton: {
@@ -179,7 +191,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tagBadge: {
-    backgroundColor: "#E8F2FF",
+    backgroundColor: "#E8F2FF", // será sobrescrito por el theme
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -188,7 +200,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 10,
-    color: "#666",
+    color: "#666", // será sobrescrito por el theme
     fontWeight: "600",
   },
   tagsContainer: {
