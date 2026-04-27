@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 export const completeProfile = async (req, res) => {
     try {
-        const { userId, occupation, description, dni, latitude, longitude, hourlyRate, tags, } = req.body;
+        const { userId, occupation, description, dni, latitude, longitude, hourlyRate, province, city, tags, } = req.body;
         if (!userId)
             return res.status(400).json({ error: "El userId es obligatorio" });
         let tagsData = [];
@@ -190,7 +190,7 @@ export const getWorkerVerificationStatus = async (req, res) => {
     res.json({ verification: profile?.verification || "NOT_STARTED" });
 };
 export const saveDraft = async (req, res) => {
-    const { userId, occupation, description, hourlyRate, latitude, longitude, tags, } = req.body;
+    const { userId, occupation, description, hourlyRate, latitude, longitude, province, city, tags, } = req.body;
     try {
         const profile = await prisma.workerProfile.upsert({
             where: { userId: parseInt(userId) },

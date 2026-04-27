@@ -95,6 +95,8 @@ model WorkerProfile {
   hourlyRate  Float?
   lastLat     Float?
   lastLng     Float?
+  province    String?  // Provincia
+  city        String?  // Ciudad
 
   userId    Int    @unique
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)

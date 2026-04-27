@@ -11,6 +11,8 @@ export const completeProfile = async (req: Request, res: Response) => {
       latitude,
       longitude,
       hourlyRate,
+      province,
+      city,
       tags,
     } = req.body;
 
@@ -103,7 +105,7 @@ export const listWorkers = async (req: Request, res: Response) => {
     const { tag } = req.query;
     const workers = await prisma.workerProfile.findMany({
       where: {
-        verification: "VERIFIED", 
+        verification: "VERIFIED",
         ...(tag ? { tags: { some: { name: tag as string } } } : {}),
       },
       include: {
@@ -115,7 +117,7 @@ export const listWorkers = async (req: Request, res: Response) => {
             email: true,
             avatar: true,
             lastSeen: true,
-            receivedReviews: { select: { rating: true } }, 
+            receivedReviews: { select: { rating: true } },
           },
         },
       },
@@ -231,6 +233,8 @@ export const saveDraft = async (req: Request, res: Response) => {
     hourlyRate,
     latitude,
     longitude,
+    province,
+    city,
     tags,
   } = req.body;
 
