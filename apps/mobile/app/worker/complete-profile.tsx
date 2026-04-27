@@ -29,6 +29,7 @@ export default function CompleteProfileScreen() {
     loading,
     loadingLocation,
     isEditing,
+    isDraft,
     toggleTag,
     pickImage,
     getLocation,
@@ -36,6 +37,8 @@ export default function CompleteProfileScreen() {
     searchManualAddress,
     handlePressVerify,
     saveProfile,
+    saveDraftManually,
+    profileCompletion,
   } = useCompleteProfile();
 
   const { user } = useAuth();
@@ -46,8 +49,46 @@ export default function CompleteProfileScreen() {
       <Text style={[styles.title, { color: colors.text }]}>
         {isEditing
           ? "Editar Perfil Profesional"
+          : isDraft
+          ? "Continuar Perfil Profesional"
           : "Completar Perfil Profesional"}
       </Text>
+
+      {/* Barra de progreso */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressHeader}>
+          <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
+            Perfil completado
+          </Text>
+          <Text style={[styles.progressPercent, { color: colors.text }]}>
+            {profileCompletion}%
+          </Text>
+        </View>
+        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${profileCompletion}%` as any,
+                backgroundColor: profileCompletion === 100 ? "#28A745" : "#007AFF",
+              },
+            ]}
+          />
+        </View>
+      </View>
+
+      {/* Banner de borrador */}
+      {isDraft && (
+        <View style={styles.draftBanner}>
+          <Ionicons name="time-outline" size={20} color="#E65100" />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.draftBannerTitle}>Perfil incompleto</Text>
+            <Text style={styles.draftBannerText}>
+              Completá todos los campos para que tu perfil sea revisado y puedas recibir trabajo.
+            </Text>
+          </View>
+        </View>
+      )}
 
       <EmailVerificationBanner
         email={user?.email}
@@ -170,6 +211,17 @@ export default function CompleteProfileScreen() {
       <Text style={[styles.label, { color: colors.textSecondary }]}>Validación de Identidad</Text>
       <IdentityImages images={images} onPickImage={pickImage} />
 
+      {!isEditing && (
+        <TouchableOpacity
+          style={[styles.draftButton, loading && styles.buttonDisabled]}
+          onPress={saveDraftManually}
+          disabled={loading}
+        >
+          <Ionicons name="save-outline" size={18} color="#555" style={{ marginRight: 8 }} />
+          <Text style={styles.draftButtonText}>Guardar progreso</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={saveProfile}
@@ -179,7 +231,7 @@ export default function CompleteProfileScreen() {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>
-            {isEditing ? "Guardar Cambios" : "Crear Perfil"}
+            {isEditing ? "Guardar Cambios" : "Enviar Perfil"}
           </Text>
         )}
       </TouchableOpacity>
@@ -280,6 +332,60 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   buttonDisabled: { opacity: 0.6 },
+  progressContainer: { marginBottom: 16 },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  progressLabel: { fontSize: 13 },
+  progressPercent: { fontSize: 13, fontWeight: "bold" },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  draftBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#FFF3E0",
+    borderWidth: 1,
+    borderColor: "#FFB74D",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  draftBannerTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#E65100",
+    marginBottom: 2,
+  },
+  draftBannerText: {
+    fontSize: 12,
+    color: "#BF360C",
+    lineHeight: 17,
+  },
+  draftButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0F0F0",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  draftButtonText: {
+    color: "#555",
+    fontWeight: "600",
+    fontSize: 16,
+  },
   verificationBanner: {
     flexDirection: "row",
     alignItems: "center",

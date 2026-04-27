@@ -10,11 +10,23 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
-export default function AdminVerifyScreen() {
-  const [pending, setPending] = useState([]);
+interface PendingWorker {
+  id: number;
+  dni?: string;
+  user: {
+    name: string;
+  };
+  dniFront: string;
+  dniBack: string;
+  selfie: string;
+}
 
+export default function AdminVerifyScreen() {
+  const [pending, setPending] = useState<PendingWorker[]>([]);
+  const { colors } = useTheme();
   const loadPending = async () => {
     try {
       const token = await SecureStore.getItemAsync("userToken");
@@ -58,27 +70,39 @@ export default function AdminVerifyScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Verificación de Trabajadores</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>
+        Verificación de Trabajadores
+      </Text>
       <FlatList
         data={pending}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.name}>{item.user.name}</Text>
-            <Text>DNI: {item.dni}</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.name, { color: colors.text }]}>
+              {item.user.name}
+            </Text>
+            <Text style={[styles.dni, { color: colors.text }]}>
+              DNI: {item.dni}
+            </Text>
 
             <View style={styles.imageRow}>
               <View>
-                <Text style={styles.imgLabel}>Frente</Text>
+                <Text style={[styles.imgLabel, { color: colors.text }]}>
+                  Frente
+                </Text>
                 <Image source={{ uri: item.dniFront }} style={styles.thumb} />
               </View>
               <View>
-                <Text style={styles.imgLabel}>Dorso</Text>
+                <Text style={[styles.imgLabel, { color: colors.text }]}>
+                  Dorso
+                </Text>
                 <Image source={{ uri: item.dniBack }} style={styles.thumb} />
               </View>
               <View>
-                <Text style={styles.imgLabel}>Selfie</Text>
+                <Text style={[styles.imgLabel, { color: colors.text }]}>
+                  Selfie
+                </Text>
                 <Image source={{ uri: item.selfie }} style={styles.thumb} />
               </View>
             </View>
@@ -106,10 +130,9 @@ export default function AdminVerifyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f4f4f4" },
+  container: { flex: 1, padding: 20 },
   title: { fontSize: 20, fontWeight: "bold", marginBottom: 20, marginTop: 20 },
   card: {
-    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -132,4 +155,5 @@ const styles = StyleSheet.create({
   btnApprove: { backgroundColor: "#28a745" },
   btnReject: { backgroundColor: "#dc3545" },
   btnText: { color: "#fff", fontWeight: "bold" },
+  dni: {},
 });

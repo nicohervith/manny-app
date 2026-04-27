@@ -200,6 +200,8 @@ export const saveDraft = async (req, res) => {
                 hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
                 latitude: latitude ? parseFloat(latitude) : undefined,
                 longitude: longitude ? parseFloat(longitude) : undefined,
+                province: province || undefined,
+                city: city || undefined,
                 tags: tags
                     ? {
                         set: [],
@@ -216,6 +218,8 @@ export const saveDraft = async (req, res) => {
                 occupation: occupation || "",
                 description: description || "",
                 dni: "",
+                province: province || "",
+                city: city || "",
                 verification: "DRAFT",
             },
         });

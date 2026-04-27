@@ -37,7 +37,7 @@ export function LocationPicker({
     <View style={styles.container}>
       {/* INSTRUCCIÓN CLARA */}
       <Text style={styles.instruction}>
-        Ingresá la dirección donde ofrecés tus servicios
+        Indicá tu zona de trabajo (no importa desde dónde estés completando el perfil)
       </Text>
 
       {/* BÚSQUEDA POR DIRECCIÓN */}
@@ -77,7 +77,7 @@ export function LocationPicker({
         ) : (
           <>
             <Ionicons name="navigate" size={18} color="#fff" />
-            <Text style={styles.gpsButtonText}>Usar mi ubicación actual</Text>
+            <Text style={styles.gpsButtonText}>Usar GPS (solo si estás en tu zona de trabajo)</Text>
           </>
         )}
       </TouchableOpacity>

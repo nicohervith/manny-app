@@ -12,10 +12,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
-
 export default function DisputesScreen() {
+  const { colors } = useTheme();
   const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -72,8 +73,10 @@ export default function DisputesScreen() {
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Casos Abiertos ({disputes.length})</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>
+        Casos Abiertos ({disputes.length})
+      </Text>
 
       <FlatList
         data={disputes}
@@ -85,22 +88,32 @@ export default function DisputesScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.jobTitle}>{item.job?.title}</Text>
+              <Text style={[styles.jobTitle, { color: colors.text }]}>
+                {item.job?.title}
+              </Text>
               <View style={styles.openBadge}>
-                <Text style={styles.openBadgeText}>ABIERTO</Text>
+                <Text style={[styles.openBadgeText, { color: colors.text }]}>
+                  ABIERTO
+                </Text>
               </View>
             </View>
 
-            <Text style={styles.label}>Cliente:</Text>
-            <Text style={styles.value}>{item.job?.client?.name}</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Cliente:</Text>
+            <Text style={[styles.value, { color: colors.text }]}>
+              {item.job?.client?.name}
+            </Text>
 
-            <Text style={styles.label}>Trabajador:</Text>
-            <Text style={styles.value}>{item.job?.worker?.name}</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Trabajador:</Text>
+            <Text style={[styles.value, { color: colors.text }]}>
+              {item.job?.worker?.name}
+            </Text>
 
-            <Text style={styles.label}>Motivo del reporte:</Text>
-            <Text style={styles.reason}>{item.reason}</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Motivo del reporte:</Text>
+            <Text style={[styles.reason, { color: colors.text }]}>
+              {item.reason}
+            </Text>
 
             <Text style={styles.date}>
               {new Date(item.createdAt).toLocaleDateString()}

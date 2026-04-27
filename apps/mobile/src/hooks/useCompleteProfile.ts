@@ -45,6 +45,7 @@ export function useCompleteProfile() {
   const [loading, setLoading] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDraft, setIsDraft] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [address, setAddress] = useState("Ubicación no establecida");
@@ -111,6 +112,15 @@ export function useCompleteProfile() {
     return () => clearInterval(interval);
   }, [saveDraft]);
 
+  const saveDraftManually = useCallback(async () => {
+    await saveDraft();
+    setIsDraft(true);
+    Alert.alert(
+      "Progreso guardado",
+      "Podés retomar el perfil cuando quieras. Recordá completarlo para empezar a recibir trabajo.",
+    );
+  }, [saveDraft]);
+
   const loadExistingProfile = async () => {
     try {
       const userDataRaw = await SecureStore.getItemAsync("userData");
@@ -124,7 +134,9 @@ export function useCompleteProfile() {
       if (!res.data) return;
 
       const p = res.data;
-      setIsEditing(true);
+      const isDraftProfile = p.verification === "DRAFT";
+      setIsDraft(isDraftProfile);
+      setIsEditing(!isDraftProfile);
       setForm({
         occupation: p.occupation || "",
         dni: p.dni || "",
@@ -395,6 +407,7 @@ export function useCompleteProfile() {
     loading,
     loadingLocation,
     isEditing,
+    isDraft,
     isEmailVerified,
     userEmail,
     toggleTag,
@@ -404,6 +417,7 @@ export function useCompleteProfile() {
     searchManualAddress,
     handlePressVerify,
     saveProfile,
+    saveDraftManually,
     profileCompletion,
   };
 }
