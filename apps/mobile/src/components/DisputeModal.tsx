@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import api from "../services/api";
 import { Job } from "../types/job";
+import { useTheme } from "../context/ThemeContext";
 
 interface DisputeModalProps {
   visible: boolean;
@@ -31,6 +32,9 @@ export default function DisputeModal({
   onSuccess,
 }: DisputeModalProps) {
   const [submitting, setSubmitting] = React.useState(false);
+  const { colors } = useTheme();
+
+  const styles = getStyles(colors);
 
   const submitDispute = async () => {
     if (!disputeReason.trim()) {
@@ -65,10 +69,10 @@ export default function DisputeModal({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <TouchableOpacity style={styles.closeModal} onPress={onClose}>
-            <Ionicons name="close" size={24} color="#333" />
+            <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
 
-          <Ionicons name="warning" size={40} color="#DC3545" />
+          <Ionicons name="warning" size={40} color={colors.error} />
           <Text style={styles.modalTitle}>Reportar un problema</Text>
           <Text style={styles.modalSubtitle}>
             Describí qué salió mal con este trabajo
@@ -76,7 +80,7 @@ export default function DisputeModal({
 
           <TextInput
             style={styles.reviewInput}
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textLight}
             placeholder="Ej: El trabajador no se presentó, el trabajo quedó incompleto..."
             multiline
             numberOfLines={4}
@@ -101,43 +105,45 @@ export default function DisputeModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 25,
-    alignItems: "center",
-  },
-  closeModal: { alignSelf: "flex-end" },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 10,
-  },
-  modalSubtitle: { fontSize: 16, color: "#666", marginVertical: 10 },
-  reviewInput: {
-    width: "100%",
-    backgroundColor: "#F5F5F5",
-    borderRadius: 10,
-    padding: 15,
-    textAlignVertical: "top",
-    fontSize: 16,
-    marginBottom: 20,
-    color: "#000",
-  },
-  confirmButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  disputeConfirmButton: {
-    backgroundColor: "#DC3545",
-    width: "100%",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-});
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: 25,
+      alignItems: "center",
+    },
+    closeModal: { alignSelf: "flex-end" },
+    modalTitle: {
+      fontSize: 22,
+      fontWeight: "bold",
+      color: colors.text,
+      marginTop: 10,
+    },
+    modalSubtitle: { fontSize: 16, color: colors.textSecondary, marginVertical: 10 },
+    reviewInput: {
+      width: "100%",
+      backgroundColor: colors.surface,
+      borderRadius: 10,
+      padding: 15,
+      textAlignVertical: "top",
+      fontSize: 16,
+      marginBottom: 20,
+      color: colors.text,
+    },
+    confirmButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+    disputeConfirmButton: {
+      backgroundColor: colors.error,
+      width: "100%",
+      padding: 15,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+  });
+}

@@ -14,6 +14,7 @@ import { IdentityImages } from "../../src/components/worker/IdentityImages";
 import { LocationPicker } from "../../src/components/worker/LocationPicker";
 import { AVAILABLE_TAGS } from "../../src/constants/Categories";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import { useCompleteProfile } from "../../src/hooks/useCompleteProfile";
 
 export default function CompleteProfileScreen() {
@@ -38,9 +39,11 @@ export default function CompleteProfileScreen() {
   } = useCompleteProfile();
 
   const { user } = useAuth();
+  const { colors } = useTheme();
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>
         {isEditing
           ? "Editar Perfil Profesional"
           : "Completar Perfil Profesional"}
@@ -52,41 +55,67 @@ export default function CompleteProfileScreen() {
         onPressVerify={handlePressVerify}
       />
 
-      <Text style={styles.label}>Ocupación</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Ocupación</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
         placeholder="Ej: Plomero"
+        placeholderTextColor={colors.textLight}
         value={form.occupation}
         onChangeText={(t) => setForm((prev) => ({ ...prev, occupation: t }))}
       />
 
-      <Text style={styles.label}>Precio por Hora (ARS)</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Precio por Hora (ARS)</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
         keyboardType="numeric"
+        placeholderTextColor={colors.textLight}
         value={form.hourlyRate}
         onChangeText={(t) => setForm((prev) => ({ ...prev, hourlyRate: t }))}
       />
 
-      <Text style={styles.label}>DNI / Identificación</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Provincia</Text>
       <TextInput
-        style={[styles.input, isEditing && styles.disabledInput]}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+        placeholder="Ej: Buenos Aires"
+        placeholderTextColor={colors.textLight}
+        value={form.province}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, province: t }))}
+      />
+
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Ciudad</Text>
+      <TextInput
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+        placeholder="Ej: Capital Federal"
+        placeholderTextColor={colors.textLight}
+        value={form.city}
+        onChangeText={(t) => setForm((prev) => ({ ...prev, city: t }))}
+      />
+
+      <Text style={[styles.label, { color: colors.textSecondary }]}>DNI / Identificación</Text>
+      <TextInput
+        style={[
+          styles.input,
+          isEditing && styles.disabledInput,
+          { backgroundColor: isEditing ? colors.border : colors.surface, color: isEditing ? colors.textLight : colors.text },
+        ]}
         keyboardType="numeric"
         editable={!isEditing}
+        placeholderTextColor={colors.textLight}
         value={form.dni}
         onChangeText={(t) => setForm((prev) => ({ ...prev, dni: t }))}
       />
 
-      <Text style={styles.label}>Biografía</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Biografía</Text>
       <TextInput
-        style={[styles.input, styles.textArea]}
+        style={[styles.input, styles.textArea, { backgroundColor: colors.surface, color: colors.text }]}
         multiline
+        placeholderTextColor={colors.textLight}
         value={form.description}
         onChangeText={(t) => setForm((prev) => ({ ...prev, description: t }))}
       />
 
-      <Text style={styles.label}>Mis Especialidades (Tags)</Text>
-      <Text style={styles.subLabel}>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Mis Especialidades (Tags)</Text>
+      <Text style={[styles.subLabel, { color: colors.textSecondary }]}>
         Selecciona todas las que apliquen a tu trabajo
       </Text>
 
@@ -97,12 +126,17 @@ export default function CompleteProfileScreen() {
             <TouchableOpacity
               key={tag}
               onPress={() => toggleTag(tag)}
-              style={[styles.tagChip, isSelected && styles.tagChipSelected]}
+              style={[
+                styles.tagChip,
+                isSelected && styles.tagChipSelected,
+                !isSelected && { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
             >
               <Text
                 style={[
                   styles.tagChipText,
                   isSelected && styles.tagChipTextSelected,
+                  !isSelected && { color: colors.text },
                 ]}
               >
                 {tag}
@@ -120,7 +154,7 @@ export default function CompleteProfileScreen() {
         })}
       </View>
 
-      <Text style={styles.label}>Ubicación de Trabajo</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Ubicación de Trabajo</Text>
       <LocationPicker
         form={form}
         region={region}
@@ -133,7 +167,7 @@ export default function CompleteProfileScreen() {
         onMapPress={handleMapPress}
       />
 
-      <Text style={styles.label}>Validación de Identidad</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>Validación de Identidad</Text>
       <IdentityImages images={images} onPickImage={pickImage} />
 
       <TouchableOpacity
@@ -156,7 +190,6 @@ export default function CompleteProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 25,
-    backgroundColor: "#fff",
     flexGrow: 1,
     paddingTop: 60,
   },
@@ -166,16 +199,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 15,
     marginBottom: 5,
-    color: "#555",
   },
   input: {
-    backgroundColor: "#F0F2F5",
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
   },
   locationContainer: {
-    backgroundColor: "#F2F2F7",
     borderRadius: 15,
     overflow: "hidden",
     marginTop: 10,
@@ -201,7 +231,6 @@ const styles = StyleSheet.create({
   },
   locationButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
   addressText: {
-    color: "#666",
     fontSize: 12,
     textAlign: "center",
     marginTop: 8,
@@ -215,7 +244,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
-  disabledInput: { backgroundColor: "#eee", color: "#999" },
+  disabledInput: { opacity: 0.6 },
   textArea: { height: 100, textAlignVertical: "top" },
   whiteText: { color: "#fff", fontWeight: "bold" },
   imageGrid: {
@@ -248,7 +277,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 8,
     fontWeight: "500",
-    color: "#444",
     textAlign: "center",
   },
   buttonDisabled: { opacity: 0.6 },
@@ -305,7 +333,6 @@ const styles = StyleSheet.create({
   },
   subLabel: {
     fontSize: 12,
-    color: "#666",
     marginBottom: 8,
     marginTop: -8,
   },
@@ -317,14 +344,12 @@ const styles = StyleSheet.create({
   tagChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0F0F0",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#DDD",
   },
   tagChipSelected: {
     backgroundColor: "#007AFF",
@@ -332,7 +357,6 @@ const styles = StyleSheet.create({
   },
   tagChipText: {
     fontSize: 14,
-    color: "#444",
   },
   tagChipTextSelected: {
     color: "#FFF",

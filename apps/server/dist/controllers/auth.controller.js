@@ -29,11 +29,10 @@ export const forgotPassword = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            // Respondemos igual para no revelar si el email existe
             return res.json({ message: "Si el email existe, recibirás un código." });
         }
         const resetToken = crypto.randomInt(100000, 999999).toString();
-        const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+        const expiry = new Date(Date.now() + 15 * 60 * 1000);
         await prisma.user.update({
             where: { email },
             data: { resetToken, resetTokenExpiry: expiry },

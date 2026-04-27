@@ -8,6 +8,7 @@ import { io } from "socket.io-client";
 import { IconWithBadge } from "../../src/components/ui/IconWithBadge";
 import { API_URL } from "../../src/constants/Config";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import { registerForPushNotificationsAsync } from "../../src/hooks/usePushNotifications";
 import api from "../../src/services/api";
 
@@ -29,7 +30,7 @@ export default function TabLayout() {
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
+  const { colors } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const [newBidsCount, setNewBidsCount] = useState(0);
 
@@ -223,7 +224,23 @@ export default function TabLayout() {
   const role = user.role;
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: "#007AFF" }}>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        headerStyle: {
+          backgroundColor: colors.surface,
+        },
+        headerTintColor: colors.text,
+        headerTitleStyle: {
+          color: colors.text,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -271,7 +288,7 @@ export default function TabLayout() {
                     position: "absolute",
                     right: -6,
                     top: -4,
-                    backgroundColor: "#FF3B30",
+                    backgroundColor: colors.error,
                     borderRadius: 10,
                     width: 18,
                     height: 18,

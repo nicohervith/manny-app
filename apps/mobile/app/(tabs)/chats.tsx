@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 interface Chat {
@@ -26,6 +27,8 @@ export default function ChatListScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
+  const { colors } = useTheme();
+
   const fetchChats = async () => {
     if (!user) return;
     try {
@@ -43,8 +46,10 @@ export default function ChatListScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mis Conversaciones</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.header, { color: colors.text }]}>
+        Mis Conversaciones
+      </Text>
       <FlatList
         data={chats}
         keyExtractor={(item) => item.id.toString()}
@@ -57,7 +62,11 @@ export default function ChatListScreen() {
 
           return (
             <TouchableOpacity
-              style={[styles.chatCard, isCompleted && styles.completedCard]}
+              style={[
+                styles.chatCard,
+                isCompleted && styles.completedCard,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
               onPress={() =>
                 router.push({
                   pathname: "/chat/[jobId]",
@@ -66,37 +75,75 @@ export default function ChatListScreen() {
               }
             >
               <View
-                style={[styles.avatar, isCompleted && styles.completedAvatar]}
+                style={[
+                  styles.avatar,
+                  isCompleted && styles.completedAvatar,
+                  {
+                    backgroundColor: isCompleted
+                      ? colors.textLight
+                      : colors.primary,
+                  },
+                ]}
               >
-                <Text style={styles.avatarText}>{otherParty?.name[0]}</Text>
+                <Text style={[styles.avatarText, { color: colors.background }]}>
+                  {otherParty?.name[0]}
+                </Text>
               </View>
 
               <View style={styles.chatInfo}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.jobTitle} numberOfLines={1}>
+                  <Text
+                    style={[styles.jobTitle, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
                     {item.title}
                   </Text>
                   {isCompleted && (
-                    <View style={styles.completedBadge}>
-                      <Text style={styles.completedBadgeText}>FINALIZADO</Text>
+                    <View
+                      style={[
+                        styles.completedBadge,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.completedBadgeText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        FINALIZADO
+                      </Text>
                     </View>
                   )}
                 </View>
 
-                <Text style={styles.otherPartyName}>
+                <Text
+                  style={[styles.otherPartyName, { color: colors.primary }]}
+                >
                   {item.clientId === user?.id
                     ? `👷 ${item.worker?.name}`
                     : `👤 ${item.client?.name}`}
                 </Text>
 
-                <Text style={styles.lastMessage} numberOfLines={1}>
+                <Text
+                  style={[styles.lastMessage, { color: colors.textSecondary }]}
+                  numberOfLines={1}
+                >
                   {isCompleted && "⚠️ Chat temporal: "}
                   {lastMsg ? lastMsg.content : "No hay mensajes aún"}
                 </Text>
               </View>
 
               {unreadCount > 0 && !isCompleted && (
-                <View style={styles.unreadBadge}>
+                <View
+                  style={[
+                    styles.unreadBadge,
+                    { backgroundColor: colors.error },
+                  ]}
+                >
                   <Text style={styles.unreadText}>{unreadCount}</Text>
                 </View>
               )}
@@ -111,7 +158,6 @@ export default function ChatListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -120,16 +166,15 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#007AFF",
     justifyContent: "center",
     alignItems: "center",
+    marginLeft: 10,
   },
-  avatarText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  avatarText: { fontSize: 20, fontWeight: "bold" },
   chatInfo: { flex: 1, marginLeft: 15 },
   jobTitle: { fontSize: 16, fontWeight: "bold" },
-  lastMessage: { color: "#888", fontSize: 14 },
+  lastMessage: { fontSize: 14 },
   unreadBadge: {
-    backgroundColor: "#FF3B30",
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -140,16 +185,14 @@ const styles = StyleSheet.create({
   chatCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
   completedCard: {
-    backgroundColor: "#F9F9F9", // Fondo sutilmente gris
-    opacity: 0.8,
+    opacity: 0.7,
   },
   completedAvatar: {
-    backgroundColor: "#94A3B8", // Avatar gris
+    opacity: 0.6,
   },
   titleRow: {
     flexDirection: "row",
@@ -157,21 +200,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   completedBadge: {
-    backgroundColor: "#E2E8F0",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     marginLeft: 8,
+    borderWidth: 1,
   },
   completedBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "bold",
-    color: "#64748B",
   },
   otherPartyName: {
     fontSize: 12,
-    color: "#007AFF",
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 4,
   },
 });

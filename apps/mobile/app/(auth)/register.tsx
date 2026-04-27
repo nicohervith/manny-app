@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { API_URL } from "../../src/constants/Config";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const ROLES = [
   { value: "CLIENT", label: "Busco un profesional" },
@@ -23,11 +24,12 @@ export default function RegisterScreen() {
     name: "",
     email: "",
     password: "",
-    role: "CLIENT", // Valor por defecto
+    role: "CLIENT",
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handleRegister = async () => {
     if (!form.name || !form.email || !form.password) {
@@ -55,30 +57,30 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Crear Cuenta</Text>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Crear Cuenta</Text>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         placeholder="Nombre completo"
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textLight}
         onChangeText={(text) => setForm({ ...form, name: text })}
       />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
         placeholder="Email"
-        placeholderTextColor="#999"
+        placeholderTextColor={colors.textLight}
         autoCapitalize="none"
         keyboardType="email-address"
         onChangeText={(text) => setForm({ ...form, email: text })}
       />
 
-      <View style={styles.passwordContainer}>
+      <View style={[styles.passwordContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TextInput
-          style={styles.passwordInput}
+          style={[styles.passwordInput, { color: colors.text }]}
           placeholder="Contraseña"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textLight}
           value={form.password}
           onChangeText={(text) => setForm({ ...form, password: text })}
           secureTextEntry={!showPassword}
@@ -90,12 +92,12 @@ export default function RegisterScreen() {
           <Ionicons
             name={showPassword ? "eye-off" : "eye"}
             size={24}
-            color="#666"
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.label}>¿Qué buscas hacer?</Text>
+      <Text style={[styles.label, { color: colors.text }]}>¿Qué buscas hacer?</Text>
       <View style={styles.roleContainer}>
         {ROLES.map(({ value, label }) => (
           <TouchableOpacity
@@ -136,7 +138,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     justifyContent: "center",
-    backgroundColor: "#fff",
   },
   title: {
     fontSize: 28,
@@ -145,13 +146,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    backgroundColor: "#f5f5f5",
-    color: "#000",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#eee",
   },
   label: { fontSize: 16, marginBottom: 10, fontWeight: "600" },
   roleContainer: {
@@ -181,16 +179,13 @@ const styles = StyleSheet.create({
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   passwordContainer: {
     flexDirection: "row",
-    backgroundColor: "#f5f5f5",
     alignItems: "center",
     borderRadius: 10,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#eee",
     position: "relative",
   },
   passwordInput: {
-    color: "#000",
     flex: 1,
     padding: 15,
     paddingRight: 50,

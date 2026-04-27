@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 export default function ProfileScreen() {
@@ -25,6 +26,8 @@ export default function ProfileScreen() {
   const [isMpLinked, setIsMpLinked] = useState(false);
 
   const [profileCompletion, setProfileCompletion] = useState(0);
+
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (role !== "WORKER" || !user?.id) return;
@@ -143,104 +146,185 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <TouchableOpacity onPress={pickImage} disabled={uploading}>
         {uploading ? (
           <ActivityIndicator
             size="large"
-            color="#007AFF"
+            color={colors.primary}
             style={{ height: 100 }}
           />
         ) : user?.avatar ? (
-          <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+          <Image
+            source={{ uri: user.avatar }}
+            style={[styles.avatarImage, { borderColor: colors.primary }]}
+          />
         ) : (
-          <Ionicons name="person-circle" size={120} color="#007AFF" />
+          <Ionicons name="person-circle" size={120} color={colors.primary} />
         )}
-        <View style={styles.editBadge}>
+        <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
           <Ionicons name="camera" size={15} color="#fff" />
         </View>
       </TouchableOpacity>
 
-      <Text style={styles.userName}>{user?.name || "Cargando..."}</Text>
+      <Text style={[styles.userName, { color: colors.text }]}>
+        {user?.name || "Cargando..."}
+      </Text>
       {/*   <Text style={styles.title}>Mi Cuenta</Text> */}
 
       {role === "WORKER" && (
         <>
           {profileCompletion < 100 && (
-            <View style={styles.completionContainer}>
+            <View
+              style={[
+                styles.completionContainer,
+                {
+                  backgroundColor: colors.commissionBg,
+                  borderColor: colors.progressBg,
+                },
+              ]}
+            >
               <View style={styles.completionHeader}>
-                <Text style={styles.completionLabel}>Perfil completado</Text>
-                <Text style={styles.completionPercent}>
+                <Text style={[styles.completionLabel, { color: colors.text }]}>
+                  Perfil completado
+                </Text>
+                <Text
+                  style={[styles.completionPercent, { color: colors.primary }]}
+                >
                   {profileCompletion}%
                 </Text>
               </View>
-              <View style={styles.progressBarBg}>
+              <View
+                style={[
+                  styles.progressBarBg,
+                  { backgroundColor: colors.progressBg },
+                ]}
+              >
                 <View
                   style={[
                     styles.progressBarFill,
-                    { width: `${profileCompletion}%` },
+                    {
+                      width: `${profileCompletion}%`,
+                      backgroundColor: colors.primary,
+                    },
                   ]}
                 />
               </View>
               {profileCompletion < 100 && (
-                <Text style={styles.completionHint}>
+                <Text
+                  style={[
+                    styles.completionHint,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   Completá tu perfil para recibir más trabajos
                 </Text>
               )}
             </View>
           )}
           <TouchableOpacity
-            style={styles.menuButton}
+            style={[
+              styles.menuButton,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
             onPress={() => router.push("/worker/complete-profile")}
           >
-            <Ionicons name="briefcase-outline" size={20} color="#333" />
-            <Text style={styles.menuText}>Editar Perfil Profesional</Text>
-            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+            <Ionicons name="briefcase-outline" size={20} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>
+              Editar Perfil Profesional
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textLight}
+            />
           </TouchableOpacity>
-
+          <TouchableOpacity
+            style={[
+              styles.menuButton,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
+            onPress={() => router.push("/settings" as any)}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>
+              Ajustes
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textLight}
+            />
+          </TouchableOpacity>
           {isMpLinked ? (
             <View
               style={[
                 styles.menuButton,
-                { borderLeftWidth: 4, borderLeftColor: "#28A745" },
+                {
+                  borderLeftWidth: 4,
+                  borderLeftColor: colors.success,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
               ]}
             >
-              <Ionicons name="checkmark-circle" size={20} color="#28A745" />
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={colors.success}
+              />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.menuText, { color: "#28A745" }]}>
+                <Text style={[styles.menuText, { color: colors.success }]}>
                   Mercado Pago vinculado ✓
                 </Text>
-                <Text style={{ fontSize: 11, color: "#999", marginTop: 2 }}>
+                <Text
+                  style={[styles.mpLinkedSubtext, { color: colors.textLight }]}
+                >
                   Tu cuenta está lista para recibir pagos
                 </Text>
               </View>
               <TouchableOpacity onPress={handleLinkMercadoPago}>
-                <Text style={{ fontSize: 12, color: "#00B1EA" }}>Cambiar</Text>
+                <Text style={[styles.mpChangeText, { color: colors.info }]}>
+                  Cambiar
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
               style={[
                 styles.menuButton,
-                { borderLeftWidth: 4, borderLeftColor: "#00B1EA" },
+                {
+                  borderLeftWidth: 4,
+                  borderLeftColor: colors.info,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
               ]}
               onPress={handleLinkMercadoPago}
             >
-              <Ionicons name="wallet-outline" size={20} color="#00B1EA" />
-              <Text style={[styles.menuText, { color: "#00B1EA" }]}>
+              <Ionicons name="wallet-outline" size={20} color={colors.info} />
+              <Text style={[styles.menuText, { color: colors.info }]}>
                 Vincular Mercado Pago
               </Text>
-              <Ionicons name="chevron-forward" size={20} color="#CCC" />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.textLight}
+              />
             </TouchableOpacity>
           )}
-
-          <View style={styles.commissionInfo}>
+          <View
+            style={[
+              styles.commissionInfo,
+              { backgroundColor: colors.commissionBg },
+            ]}
+          >
             <Ionicons
               name="information-circle-outline"
               size={16}
-              color="#666"
+              color={colors.textSecondary}
             />
-            <Text style={styles.commissionText}>
+            <Text style={[styles.commissionText, { color: colors.text }]}>
               Manny Oficios Cerca retiene una comisión del 10% sobre cada pago
               recibido a través de la plataforma. El monto que acreditamos en tu
               cuenta ya tiene descontada esta comisión.
@@ -249,7 +333,32 @@ export default function ProfileScreen() {
         </>
       )}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {role === "CLIENT" && (
+        <>
+          <TouchableOpacity
+            style={[
+              styles.menuButton,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
+            onPress={() => router.push("/settings" as any)}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>
+              Ajustes
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textLight}
+            />
+          </TouchableOpacity>
+        </>
+      )}
+
+      <TouchableOpacity
+        style={[styles.logoutButton, { backgroundColor: colors.error }]}
+        onPress={handleLogout}
+      >
         <Text style={styles.logoutText}>Cerrar Sesión</Text>
       </TouchableOpacity>
     </View>
@@ -261,43 +370,39 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    paddingVertical: 20,
   },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, marginTop: 20 },
   logoutButton: {
     flexDirection: "row",
-    backgroundColor: "#FF3B30",
     padding: 15,
     borderRadius: 12,
     width: "80%",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 20,
   },
   logoutText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   menuButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
     padding: 15,
     borderRadius: 12,
     width: "90%",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#eee",
   },
-  menuText: { flex: 1, marginLeft: 10, fontSize: 16, color: "#333" },
+  menuText: { flex: 1, marginLeft: 10, fontSize: 16 },
   avatarImage: {
     width: 120,
     height: 120,
-    borderRadius: 60, // Círculo perfecto
+    borderRadius: 60,
     borderWidth: 3,
-    borderColor: "#007AFF",
   },
   editBadge: {
     position: "absolute",
     bottom: 5,
     right: 5,
-    backgroundColor: "#007AFF",
     padding: 8,
     borderRadius: 20,
     borderWidth: 2,
@@ -308,52 +413,54 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 10,
     marginBottom: 10,
-    color: "#333",
   },
   commissionInfo: {
     flexDirection: "row",
-    backgroundColor: "#F0F6FF",
     borderRadius: 10,
     padding: 12,
     gap: 8,
     marginBottom: 16,
     alignItems: "flex-start",
+    marginHorizontal: "5%",
   },
   commissionText: {
     flex: 1,
     fontSize: 13,
-    color: "#555",
     lineHeight: 18,
   },
   completionContainer: {
-    backgroundColor: "#F0F6FF",
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#D0E4FF",
+    marginHorizontal: "5%",
   },
   completionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  completionLabel: { fontSize: 14, fontWeight: "600", color: "#333" },
-  completionPercent: { fontSize: 14, fontWeight: "700", color: "#007AFF" },
+  completionLabel: { fontSize: 14, fontWeight: "600" },
+  completionPercent: { fontSize: 14, fontWeight: "700" },
   progressBarBg: {
     height: 8,
-    backgroundColor: "#D0E4FF",
     borderRadius: 4,
     overflow: "hidden",
   },
   progressBarFill: {
     height: 8,
-    backgroundColor: "#007AFF",
     borderRadius: 4,
   },
   completionHint: {
     fontSize: 12,
-    color: "#666",
     marginTop: 6,
+  },
+  settingsButton: {},
+  mpLinkedSubtext: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  mpChangeText: {
+    fontSize: 12,
   },
 });

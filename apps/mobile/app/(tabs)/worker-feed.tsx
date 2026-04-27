@@ -16,6 +16,7 @@ import MapView, { Callout, Circle, Marker } from "react-native-maps";
 import ApplyBidModal from "../../src/components/ApplyBidModal";
 import { JobCard } from "../../src/components/jobCard";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 interface Job {
@@ -33,6 +34,7 @@ interface Job {
 
 export default function WorkerFeedScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -172,7 +174,7 @@ export default function WorkerFeedScreen() {
 
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <View
           style={{
@@ -181,17 +183,22 @@ export default function WorkerFeedScreen() {
             alignItems: "center",
           }}
         >
-          <Text style={styles.title}>Trabajos activos</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Trabajos activos
+          </Text>
 
           {/* BOTÓN PARA CAMBIAR ENTRE LISTA Y MAPA */}
           <TouchableOpacity
-            style={styles.viewToggleButton}
+            style={[
+              styles.viewToggleButton,
+              { backgroundColor: colors.commissionBg },
+            ]}
             onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}
           >
             <Ionicons
               name={viewMode === "list" ? "map-outline" : "list-outline"}
               size={20}
-              color="#007AFF"
+              color={colors.primary}
             />
             <Text style={styles.viewToggleText}>
               {viewMode === "list" ? "Ver mapa" : "Ver lista"}
@@ -200,10 +207,17 @@ export default function WorkerFeedScreen() {
         </View>
 
         {/* Contenedor del Filtro */}
-        <View style={styles.filterContainer}>
+        <View
+          style={[
+            styles.filterContainer,
+            { borderColor: colors.border, backgroundColor: colors.surface },
+          ]}
+        >
           <View style={styles.filterTextRow}>
-            <Text style={styles.filterLabel}>Radio de búsqueda:</Text>
-            <Text style={styles.radiusValue}>
+            <Text style={[styles.filterLabel, { color: colors.text }]}>
+              Radio de búsqueda:
+            </Text>
+            <Text style={[styles.radiusValue, { color: colors.text }]}>
               {radius === 100 ? "Toda la ciudad" : `${radius} km`}
             </Text>
           </View>
@@ -214,9 +228,9 @@ export default function WorkerFeedScreen() {
             step={1}
             value={radius}
             onValueChange={(value) => setRadius(value)}
-            minimumTrackTintColor="#007AFF"
-            maximumTrackTintColor="#D1D1D6"
-            thumbTintColor="#007AFF"
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
           />
         </View>
       </View>
@@ -327,40 +341,10 @@ export default function WorkerFeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2F4F7" },
-  header: { padding: 20, paddingTop: 20, backgroundColor: "#fff" },
-  title: { fontSize: 26, fontWeight: "bold", color: "#1A1A1A" },
-  subtitle: { fontSize: 14, color: "#666", marginTop: 4 },
-  jobCard: {
-    backgroundColor: "#fff",
-    marginHorizontal: 15,
-    marginTop: 15,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-  },
-  jobHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  jobTitle: { fontSize: 18, fontWeight: "bold", color: "#333", flex: 1 },
-  distanceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E6F0FF",
-    padding: 6,
-    borderRadius: 8,
-  },
-  distanceText: {
-    color: "#007AFF",
-    fontWeight: "bold",
-    fontSize: 12,
-    marginLeft: 4,
-  },
+  container: { flex: 1 },
+  header: { padding: 20, paddingTop: 20 },
+  title: { fontSize: 26, fontWeight: "bold" },
+  subtitle: { fontSize: 14, marginTop: 4 },
   description: { color: "#555", marginVertical: 10, lineHeight: 20 },
   footer: {
     flexDirection: "row",

@@ -12,10 +12,12 @@ import {
 import { CategoryGrid } from "../../src/components/Categories";
 import { WorkerCard } from "../../src/components/WorkerCard";
 import { useAuth } from "../../src/context/AuthContext";
+import { useTheme } from "../../src/context/ThemeContext";
 import api from "../../src/services/api";
 
 export default function ClientHomeScreen() {
   const { user, isLoading } = useAuth();
+  const { colors } = useTheme();
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,7 +37,6 @@ export default function ClientHomeScreen() {
     }
   };
 
-  // Al presionar una categoría en el Grid
   const handleSelectCategory = (categoryName: string) => {
     setSelectedTag(categoryName);
     fetchWorkers(categoryName);
@@ -52,9 +53,9 @@ export default function ClientHomeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10 }}>Cargando profesionales...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 10, color: colors.text }}>Cargando profesionales...</Text>
       </View>
     );
   }
@@ -63,26 +64,25 @@ export default function ClientHomeScreen() {
     return <Redirect href="/worker-feed" />;
   }
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={workers}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>¿Qué necesitas hoy?</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>¿Qué necesitas hoy?</Text>
 
-            {/* Buscador visual (lleva a crear trabajo) */}
             <TouchableOpacity
-              style={styles.searchBar}
+              style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => router.push("/create-job")}
             >
-              <Ionicons name="search" size={20} color="#999" />
-              <Text style={styles.searchText}>
+              <Ionicons name="search" size={20} color={colors.textLight} />
+              <Text style={[styles.searchText, { color: colors.textLight }]}>
                 Busca un servicio o publica un pedido
               </Text>
             </TouchableOpacity>
 
-            <Text style={styles.sectionTitle}>Categorías populares</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Categorías populares</Text>
             <CategoryGrid
               onSelectCategory={(name) => {
                 console.log("Filtrar por:", name);
@@ -91,15 +91,15 @@ export default function ClientHomeScreen() {
             />
 
             {selectedTag && (
-              <View style={styles.filterBadgeContainer}>
-                <Text style={styles.filterText}>
+              <View style={[styles.filterBadgeContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.filterText, { color: colors.text }]}>
                   Mostrando:{" "}
                   <Text style={{ fontWeight: "bold" }}>{selectedTag}</Text>
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedTag(null);
-                    fetchWorkers(); // Carga todos de nuevo
+                    fetchWorkers();
                   }}
                   style={styles.clearFilterBtn}
                 >
@@ -111,8 +111,8 @@ export default function ClientHomeScreen() {
               </View>
             )}
 
-            <View style={styles.divider} />
-            <Text style={styles.sectionTitle}>Profesionales recomendados</Text>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Profesionales recomendados</Text>
           </View>
         }
         renderItem={({ item }) => <WorkerCard item={item} />}
@@ -122,25 +122,22 @@ export default function ClientHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F7FA" },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { padding: 20, paddingTop: 20, backgroundColor: "#fff" },
+  header: { padding: 20, paddingTop: 20 },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#1A1A1A",
     marginBottom: 10,
   },
-  headerSubtitle: { fontSize: 16, color: "#666", marginTop: 4 },
+  headerSubtitle: { fontSize: 16, marginTop: 4 },
   workerCard: {
-    backgroundColor: "#fff",
     marginHorizontal: 20,
     marginTop: 15,
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
-    // Sombras
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -148,14 +145,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   workerInfo: { flex: 1, paddingRight: 10 },
-  workerName: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  workerName: { fontSize: 18, fontWeight: "bold" },
   workerOficio: {
     fontSize: 14,
     color: "#007AFF",
     fontWeight: "600",
     marginVertical: 4,
   },
-  workerDesc: { fontSize: 14, color: "#777", lineHeight: 20 },
+  workerDesc: { fontSize: 14, lineHeight: 20 },
   priceText: {
     fontSize: 14,
     fontWeight: "700",
@@ -163,21 +160,20 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   imageContainer: { justifyContent: "center", alignItems: "center" },
-  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: "#EEE" },
+  avatar: { width: 70, height: 70, borderRadius: 35 },
   placeholderAvatar: {
     justifyContent: "center",
     alignItems: "center",
     borderStyle: "dashed",
     borderWidth: 1,
-    borderColor: "#BBB",
   },
-  placeholderText: { fontSize: 10, color: "#999" },
+  placeholderText: { fontSize: 10 },
   emptyContainer: {
     alignItems: "center",
     marginTop: 100,
     paddingHorizontal: 40,
   },
-  emptyText: { fontSize: 16, color: "#999", textAlign: "center" },
+  emptyText: { fontSize: 16, textAlign: "center" },
   retryButton: {
     marginTop: 15,
     padding: 10,
@@ -189,24 +185,21 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#EEE",
     marginBottom: 25,
-    elevation: 2, // Sombra en Android
-    shadowColor: "#000", // Sombra en iOS
+    elevation: 2,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  searchText: { marginLeft: 10, color: "#999", fontSize: 16 },
+  searchText: { marginLeft: 10, fontSize: 16 },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333",
     marginBottom: 15,
   },
 
@@ -216,7 +209,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   categoryCard: {
-    width: "31%", // Para que entren 3 por fila
+    width: "31%",
     alignItems: "center",
     marginBottom: 20,
   },
@@ -228,14 +221,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  categoryText: { fontSize: 13, fontWeight: "500", color: "#444" },
+  categoryText: { fontSize: 13, fontWeight: "500" },
 
-  divider: { height: 1, backgroundColor: "#EEE", marginVertical: 10 },
+  divider: { height: 1, marginVertical: 10 },
   filterBadgeContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F2F2F7", // Un gris muy claro/azulado
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
@@ -243,17 +235,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 5,
     borderWidth: 1,
-    borderColor: "#E5E5EA",
   },
   filterText: {
     fontSize: 15,
-    color: "#3A3A3C",
     flex: 1,
   },
   clearFilterBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFE5E5", // Fondo rojizo suave para el botón
+    backgroundColor: "#FFE5E5",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
